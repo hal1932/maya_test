@@ -1,7 +1,7 @@
 # coding: utf-8
 import maya.api.OpenMaya as om2
 
-from general import MayaObject
+from nodes.general import MayaObject
 
 
 # alternative to six.moves
