@@ -8,13 +8,14 @@ from tools.node_editor.nodes.node import *
 
 class NodeGraph(object):
 
-    def __init__(self):
-        self.__nodes = []
+    # def __init__(self):
+    #     self.__nodes = []
+    #
+    # def add_node(self, node):
+    #     # type: (Node) -> NoReturn
+    #     self.__nodes.append(node)
 
-    def add_node(self, node):
-        # type: (Node) -> NoReturn
-        self.__nodes.append(node)
-
+    @staticmethod
     def evaluate(self, node):
         # type: (Node) -> NoReturn
         traversals = [[node]]
@@ -56,14 +57,14 @@ if __name__ == '__main__':
     add1.output.connect(add2.input1)
     const3.output.connect(add2.input2)
 
-    graph = NodeGraph()
-    graph.add_node(const1)
-    graph.add_node(const2)
-    graph.add_node(const3)
-    graph.add_node(add1)
-    graph.add_node(add2)
+    # graph = NodeGraph()
+    # graph.add_node(const1)
+    # graph.add_node(const2)
+    # graph.add_node(const3)
+    # graph.add_node(add1)
+    # graph.add_node(add2)
 
-    graph.evaluate(add2)
+    NodeGraph.evaluate(add2)
 
     print '{} + {} = {}'.format(const1.data, const2.data, add1.output.value)
     print '({} + {}) + {} = {}'.format(const1.data, const2.data, const3.data, add2.output.value)
