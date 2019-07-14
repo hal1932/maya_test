@@ -29,21 +29,35 @@ class Attribute(object):
         # type: (object) -> NoReturn
         self.__value = value
 
+    @property
+    def source(self):
+        # type: () -> Attribute
+        return self.__source
+
+    @property
+    def destination(self):
+        # type: () -> Attribute
+        return self.__destination
+
     def __init__(self, name, node):
         # type: (str, Node) -> NoReturn
         self.__name = name
         self.__node = node
         self.__value = None
+        self.__source = None
         self.__destination = None
 
     def connect(self, other):
         # type: (Attribute) -> Attribute
         self.__destination = other
+        other.__source = self
 
     def propagate(self):
-        # type: () -> NoReturn
-        if self.__destination is not None:
-            self.__destination.value = self.value
+        # type: () -> bool
+        if self.__destination is None:
+            return False
+        self.__destination.value = self.value
+        return True
 
 
 @add_metaclass(ABCMeta)
@@ -65,6 +79,16 @@ class Node(object):
         # type: (object) -> NoReturn
         """DataBlock"""
         self.__data = value
+
+    @property
+    def inputs(self):
+        # type: () -> Iterable[Attribute]
+        return self.__inputs.values()
+
+    @property
+    def outputs(self):
+        # type: () -> Iterable[Attribute]
+        return self.__outputs.values()
 
     def __init__(self, name):
         # type: (str) -> NoReturn
@@ -100,9 +124,11 @@ class Node(object):
         return attr
 
     def propagate(self):
-        # type:() -> Node
+        # type:() -> bool
+        has_next = False
         for output in self.__outputs.values():
-            output.propagate()
+            has_next = has_next or output.propagate()
+        return has_next
 
 
 class ConstNode(Node):
@@ -172,11 +198,11 @@ if __name__ == '__main__':
     const2 = ConstNode(2)
     const2.initialize()
 
-    add = AddNode()
-    add.initialize()
+    add1 = AddNode()
+    add1.initialize()
 
-    const1.output.connect(add.input1)
-    const2.output.connect(add.input2)
+    const1.output.connect(add1.input1)
+    const2.output.connect(add1.input2)
 
     const1.compute()
     const1.propagate()
@@ -184,8 +210,8 @@ if __name__ == '__main__':
     const2.compute()
     const2.propagate()
 
-    add.compute()
+    add1.compute()
 
-    print '{} + {} = {}'.format(const1.data, const2.data, add.output.value)
+    print '{} + {} = {}'.format(const1.data, const2.data, add1.output.value)
 
 
