@@ -1,29 +1,40 @@
 # coding: utf-8
+from __future__ import absolute_import
+from typing import *
+from six.moves import *
+
 import maya.api.OpenMaya as om2
 
-from nodes.general import MayaObject
+from libs.nodes.general import MayaObject
 
 
-# alternative to six.moves
-range = xrange
+__all__ = ['Attribute']
 
 
 class Attribute(MayaObject):
 
     @property
-    def name(self): return self.mplug.name()
+    def name(self):
+        # type: () -> str
+        return self.mplug.name()
 
     @property
-    def mobject(self): return self.apiobj
+    def mobject(self):
+        # type: () -> om2.MObject
+        return self.apiobj
 
     @property
-    def mplug(self): return self.__mplug
+    def mplug(self):
+        # type: () -> om2.MPlug
+        return self.__mplug
 
     def __init__(self, mplug):
+        # type: (om2.MPlug) -> NoReturn
         super(self.__class__, self).__init__(mplug.attribute())
         self.__mplug = mplug
 
     def __getitem__(self, item):
+        # type: (int) -> Attribute
         if not self.mplug.isArray:
             raise RuntimeError('{} is not array'.format(self.name))
         if item >= self.mplug.numElements():
@@ -31,6 +42,7 @@ class Attribute(MayaObject):
         return Attribute(self.mplug.elementByLogicalIndex(item))
 
     def get(self):
+        # type: () -> Any
         if self.mplug.isNull:
             return None
         if self.mplug.isNetworked:
@@ -68,8 +80,8 @@ def _getattr_impl(mplug):
 _api_type_table = {
     om2.MFn.kDoubleLinearAttribute: lambda plug: plug.asDouble(),
     om2.MFn.kFloatLinearAttribute: lambda plug: plug.asFloat(),
-    om2.MFn.kDoubleAngleAttribute: lambda plug: plug.asMAngle().asDegrees(),
-    om2.MFn.kFloatAngleAttribute: lambda plug: plug.asMAngle().asDegrees(),
+    om2.MFn.kDoubleAngleAttribute: lambda plug: plug.asMAngle().asUnit(om2.MAngle.uiUnit()),
+    om2.MFn.kFloatAngleAttribute: lambda plug: plug.asMAngle().asUnit(om2.MAngle.uiUnit()),
     om2.MFn.kEnumAttribute: lambda plug: plug.asInt(),
     om2.MFn.kMatrixAttribute: lambda plug: om2.MFnMatrixAttribute(plug.asMObject()).matrix(),
 }

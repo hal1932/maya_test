@@ -62,6 +62,8 @@ def __force_reload_rec(module_obj, indent=0):
         if not __is_reload_target(submodule.module_obj):
             continue
 
+        __force_reload_rec(submodule.module_obj, indent + 1)
+
         if submodule.from_import:
             for symbol in submodule.symbols:
                 name = symbol.name
@@ -70,24 +72,20 @@ def __force_reload_rec(module_obj, indent=0):
                 if as_name is None:
                     as_name = name
 
-                '''
-                if as_name == name:
-                    print('{} - ({}) {} {} {} -> {}'.format(
-                        '  ' * (indent + 1),
-                        module_obj.__name__,
-                        name, module_obj.__dict__[as_name],
-                        id(module_obj.__dict__[as_name]), id(submodule.module_obj.__dict__[name])))
-                else:
-                    print('{} - ({}) {} as {} {} {} -> {}'.format(
-                        '  ' * (indent + 1),
-                        module_obj.__name__,
-                        name, as_name, module_obj.__dict__[as_name],
-                        id(module_obj.__dict__[as_name]), id(submodule.module_obj.__dict__[name])))
-                '''
+                # if as_name == name:
+                #     print('{} - ({}) {} {} {} -> {}'.format(
+                #         '  ' * (indent + 1),
+                #         module_obj.__name__,
+                #         name, module_obj.__dict__[as_name],
+                #         id(module_obj.__dict__[as_name]), id(submodule.module_obj.__dict__[name])))
+                # else:
+                #     print('{} - ({}) {} as {} {} {} -> {}'.format(
+                #         '  ' * (indent + 1),
+                #         module_obj.__name__,
+                #         name, as_name, module_obj.__dict__[as_name],
+                #         id(module_obj.__dict__[as_name]), id(submodule.module_obj.__dict__[name])))
 
                 module_obj.__dict__[as_name] = submodule.module_obj.__dict__[name]
-
-        __force_reload_rec(submodule.module_obj, indent + 1)
 
 
 class __ModuleInfo(object):
