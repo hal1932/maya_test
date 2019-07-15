@@ -16,10 +16,13 @@ class ConnectionPoint(QObject):
         super(ConnectionPoint, self).__init__()
         self.__pos = QPointF(x, y)
 
-    def move(self, pos):
+    def move(self, diff):
         # type: (QPointF) -> NoReturn
-        self.__pos = pos
-        self.moved.emit(pos)
+        x = self.pos.x() + diff.x()
+        y = self.pos.y() + diff.y()
+        self.pos.setX(x)
+        self.pos.setY(y)
+        self.moved.emit(self.pos)
 
 
 class NodeItem(QGraphicsRectItem):
@@ -31,32 +34,32 @@ class NodeItem(QGraphicsRectItem):
         self.setFlags(QGraphicsRectItem.ItemIsSelectable)
         self.__connections = []
 
-    def set_position(self, x, y):
+    def set_position(self, pos):
+        # type: (QPointF) -> NoReturn
         rect = self.rect()
-        self.setRect(QRectF(x, y, rect.width(), rect.height()))
+        self.setRect(QRectF(pos.x(), pos.y(), rect.width(), rect.height()))
+
+        diff_x = pos.x() - rect.x()
+        diff_y = pos.y() - rect.y()
+        diff = QPointF(diff_x, diff_y)
+
+        for p in self.__connections:
+            p.move(diff)
 
     def connect(self, dest):
         rect = self.rect()
-        p1 = ConnectionPoint(rect.x(), rect.y())
+        p1 = ConnectionPoint(rect.x() + rect.width(), rect.y() + rect.height() / 2)
         self.__connections.append(p1)
 
         rect = dest.rect()
-        p2 = ConnectionPoint(rect.x(), rect.y())
+        p2 = ConnectionPoint(rect.x(), rect.y() + rect.height() / 2)
         dest.__connections.append(p2)
 
         return ConnectionItem(p1, p2)
 
-    def mousePressEvent(self, e):
-        # type: (QGraphicsSceneMouseEvent) -> NoReturn
-        pass
-
     def mouseMoveEvent(self, e):
         # type: (QGraphicsSceneMouseEvent) -> NoReturn
-        pos = e.pos()
-        self.set_position(pos.x(), pos.y())
-
-        for p in self.__connections:
-            p.move(pos)
+        self.set_position(e.pos())
 
 
 class ConnectionItem(QGraphicsLineItem):

@@ -20,11 +20,11 @@ if __name__ == '__main__':
             scene = QGraphicsScene(0, 0, 640, 480)
 
             node1 = NodeItem()
-            node1.set_position(10, 10)
+            node1.set_position(QPointF(10, 10))
             scene.addItem(node1)
 
             node2 = NodeItem()
-            node2.set_position(100, 100)
+            node2.set_position(QPointF(100, 100))
             scene.addItem(node2)
 
             conn1 = node1.connect(node2)
