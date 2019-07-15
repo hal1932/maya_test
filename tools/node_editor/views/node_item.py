@@ -2,7 +2,7 @@
 from __future__ import absolute_import
 from typing import *
 from six.moves import *
-from tools.node_editor.canvas.pyside_modules import *
+from tools.node_editor.views.pyside_modules import *
 
 
 class ConnectionPoint(QObject):
