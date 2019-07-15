@@ -59,7 +59,18 @@ class NodeItem(QGraphicsRectItem):
 
     def mouseMoveEvent(self, e):
         # type: (QGraphicsSceneMouseEvent) -> NoReturn
-        self.set_position(e.pos())
+        pos = e.pos()
+        rect = self.rect()
+        pos = QPointF(pos.x() - rect.width() / 2, pos.y() - rect.height() / 2)
+        self.set_position(pos)
+
+    def paint(self, painter, item, widget):
+        # type: (QPainter, QStyleOptionGraphicsItem, QWidget) -> NoReturn
+        if self.isSelected():
+            pen = self.pen()
+            dashed_pen = QPen(pen.brush(), pen.width(), Qt.DashLine)
+            painter.setPen(dashed_pen)
+        painter.drawRoundedRect(self.rect(), 5, 5)
 
 
 class ConnectionItem(QGraphicsLineItem):
