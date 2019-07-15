@@ -13,6 +13,7 @@ class ConnectionPoint(QObject):
     def pos(self): return self.__pos
 
     def __init__(self, x, y):
+        # type: (float, float) -> NoReturn
         super(ConnectionPoint, self).__init__()
         self.__pos = QPointF(x, y)
 
@@ -47,6 +48,7 @@ class NodeItem(QGraphicsRectItem):
             p.move(diff)
 
     def connect(self, dest):
+        # type: (NodeItem) -> ConnectionItem
         rect = self.rect()
         p1 = ConnectionPoint(rect.x() + rect.width(), rect.y() + rect.height() / 2)
         self.__connections.append(p1)
@@ -87,11 +89,13 @@ class ConnectionItem(QGraphicsLineItem):
         p2.moved.connect(self.set_end)
 
     def set_start(self, point):
+        # type: (QPointF) -> NoReturn
         line = self.line()
         line.setP1(point)
         self.setLine(line)
 
     def set_end(self, point):
+        # type: (QPointF) -> NoReturn
         line = self.line()
         line.setP2(point)
         self.setLine(line)
