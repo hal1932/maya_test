@@ -48,24 +48,32 @@ class NodeGraphView(GraphicsView):
             move.handled = True
 
 
+class NodeGraphScene(QGraphicsScene):
+
+    def __init__(self, *args, **kwargs):
+        super(NodeGraphScene, self).__init__(*args, **kwargs)
+
+    def add_node(self):
+        node = NodeItem()
+        self.addItem(node)
+        return node
+
+
 if __name__ == '__main__':
     class MainWindow(QMainWindow):
         def __init__(self):
             super(MainWindow, self).__init__()
 
-            scene = QGraphicsScene(0, 0, 640, 480)
+            scene = NodeGraphScene(0, 0, 640, 480)
             scene.addRect(0, 0, scene.width(), scene.height(), QPen(Qt.transparent), QBrush(Qt.white))
 
-            node1 = NodeItem()
+            node1 = scene.add_node()
             node1.set_position(QPointF(10, 10))
-            scene.addItem(node1)
 
-            node2 = NodeItem()
+            node2 = scene.add_node()
             node2.set_position(QPointF(100, 100))
-            scene.addItem(node2)
 
             conn1 = node1.connect(node2)
-            scene.addItem(conn1)
 
             view = NodeGraphView()
             view.setBackgroundBrush(QBrush(Qt.gray))

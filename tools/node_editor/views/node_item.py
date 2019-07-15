@@ -2,12 +2,25 @@
 from __future__ import absolute_import
 from typing import *
 from six.moves import *
+
+import inspect
 from tools.node_editor.views.pyside_modules import *
 
 
-class ConnectionPoint(QObject):
+class GraphicsItemSignal(object):
 
-    moved = Signal(QPointF)
+    def __init__(self, _):
+        self.__slots = []
+
+    def connect(self, slot):
+        self.__slots.append(slot)
+
+    def emit(self, args):
+        for slot in self.__slots:
+            slot(args)
+
+
+class ConnectionPoint(QGraphicsEllipseItem):
 
     @property
     def pos(self): return self.__pos
@@ -15,7 +28,10 @@ class ConnectionPoint(QObject):
     def __init__(self, x, y):
         # type: (float, float) -> NoReturn
         super(ConnectionPoint, self).__init__()
+        self.setRect(x - 5, y - 5, 10, 10)
+        self.setBrush(QBrush(Qt.white))
         self.__pos = QPointF(x, y)
+        self.moved = GraphicsItemSignal(QPointF)
 
     def move(self, diff):
         # type: (QPointF) -> NoReturn
@@ -23,6 +39,9 @@ class ConnectionPoint(QObject):
         y = self.pos.y() + diff.y()
         self.pos.setX(x)
         self.pos.setY(y)
+
+        self.setRect(x - 5, y - 5, 10, 10)
+
         self.moved.emit(self.pos)
 
 
@@ -30,7 +49,7 @@ class NodeItem(QGraphicsRectItem):
 
     def __init__(self, parent=None):
         super(NodeItem, self).__init__(parent)
-        self.setRect(0, 0, 50, 30)
+        self.setRect(0, 0, 100, 60)
         self.setBrush(QBrush(Qt.red))
         self.setFlags(QGraphicsRectItem.ItemIsSelectable)
         self.__connections = []
@@ -57,7 +76,13 @@ class NodeItem(QGraphicsRectItem):
         p2 = ConnectionPoint(rect.x(), rect.y() + rect.height() / 2)
         dest.__connections.append(p2)
 
-        return ConnectionItem(p1, p2)
+        conn = ConnectionItem(p1, p2)
+
+        self.scene().addItem(conn)
+        self.scene().addItem(p1)
+        self.scene().addItem(p2)
+
+        return conn
 
     def mouseMoveEvent(self, e):
         # type: (QGraphicsSceneMouseEvent) -> NoReturn
