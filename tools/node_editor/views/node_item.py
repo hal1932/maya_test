@@ -22,15 +22,27 @@ class GraphicsItemSignal(object):
 
 class ConnectionPoint(QGraphicsEllipseItem):
 
+    z_order = 20
+
     @property
     def pos(self): return self.__pos
+
+    @property
+    def source(self): return self.__source
+
+    @property
+    def destination(self): return self.__destination
 
     def __init__(self, x, y):
         # type: (float, float) -> NoReturn
         super(ConnectionPoint, self).__init__()
-        self.setRect(x - 5, y - 5, 10, 10)
+        self.setRect(x - 10, y - 10, 20, 20)
         self.setBrush(QBrush(Qt.white))
+        self.setFlags(QGraphicsRectItem.ItemIsSelectable)
+        self.setZValue(ConnectionPoint.z_order)
         self.__pos = QPointF(x, y)
+        self.__source = None
+        self.__destination = None
         self.moved = GraphicsItemSignal(QPointF)
 
     def move(self, diff):
@@ -40,24 +52,38 @@ class ConnectionPoint(QGraphicsEllipseItem):
         self.pos.setX(x)
         self.pos.setY(y)
 
-        self.setRect(x - 5, y - 5, 10, 10)
+        self.setRect(x - 10, y - 10, 20, 20)
 
         self.moved.emit(self.pos)
 
+    def connect(self, other):
+        # type: (ConnectionPoint) -> ConnectionItem
+        conn = ConnectionItem(self, other)
+        self.scene().addItem(conn)
+
+        self.__destination = other
+        other.__source = self
+
+        return conn
+
+    def mouseMoveEvent(self, e):
+        # type: (QGraphicsSceneMouseEvent) -> NoReturn
+        if self.source is None and self.destination is None:
+            self.move(e.pos() - e.lastPos())
+        super(ConnectionPoint, self).mouseMoveEvent(e)
+
 
 class NodeItem(QGraphicsRectItem):
+
+    z_order = 0
 
     def __init__(self, parent=None):
         super(NodeItem, self).__init__(parent)
         self.setRect(0, 0, 100, 60)
         self.setBrush(QBrush(Qt.red))
         self.setFlags(QGraphicsRectItem.ItemIsSelectable)
-        self.setAcceptHoverEvents(True)
+        self.setZValue(NodeItem.z_order)
         self.__connections = []
-        self.__pos = QPointF(0, 0)
-
-    def hoverMoveEvent(self, e):
-        self.__pos = e.pos()
 
     def set_position(self, pos):
         # type: (QPointF) -> NoReturn
@@ -76,31 +102,30 @@ class NodeItem(QGraphicsRectItem):
         for p in self.__connections:
             p.move(diff)
 
-    def connect(self, dest):
-        # type: (NodeItem) -> ConnectionItem
+    def set_input(self, name):
+        # type: (str) -> ConnectionPoint
         rect = self.rect()
-        p1 = ConnectionPoint(rect.x() + rect.width(), rect.y() + rect.height() / 2)
-        self.__connections.append(p1)
+        point = ConnectionPoint(rect.x(), rect.y() + rect.height() / 2)
+        self.__connections.append(point)
+        self.scene().addItem(point)
+        return point
 
-        rect = dest.rect()
-        p2 = ConnectionPoint(rect.x(), rect.y() + rect.height() / 2)
-        dest.__connections.append(p2)
-
-        conn = ConnectionItem(p1, p2)
-
-        self.scene().addItem(conn)
-        self.scene().addItem(p1)
-        self.scene().addItem(p2)
-
-        return conn
+    def set_output(self, name):
+        # type: (str) -> ConnectionPoint
+        rect = self.rect()
+        point = ConnectionPoint(rect.x() + rect.width(), rect.y() + rect.height() / 2)
+        self.__connections.append(point)
+        self.scene().addItem(point)
+        return point
 
     def mouseMoveEvent(self, e):
         # type: (QGraphicsSceneMouseEvent) -> NoReturn
-        delta = e.pos() - self.__pos
-        self.__pos = e.pos()
+        delta = e.pos() - e.lastPos()
 
         pos = self.rect().center() + delta
         self.set_position(pos)
+
+        super(NodeItem, self).mouseMoveEvent(e)
 
     def paint(self, painter, item, widget):
         # type: (QPainter, QStyleOptionGraphicsItem, QWidget) -> NoReturn
@@ -113,9 +138,12 @@ class NodeItem(QGraphicsRectItem):
 
 class ConnectionItem(QGraphicsLineItem):
 
+    z_order = 10
+
     def __init__(self, p1, p2, parent=None):
         # type: (ConnectionPoint, ConnectionPoint) -> NoReturn
         super(ConnectionItem, self).__init__(parent)
+        self.setZValue(ConnectionItem.z_order)
         self._p1 = p1
         self._p2 = p2
         self.set_start(p1.pos)

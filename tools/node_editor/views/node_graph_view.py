@@ -68,12 +68,14 @@ if __name__ == '__main__':
             scene.addRect(0, 0, scene.width(), scene.height(), QPen(Qt.transparent), QBrush(Qt.white))
 
             node1 = scene.add_node()
+            node1_output1 = node1.set_output('output1')
             node1.set_position(QPointF(100, 100))
 
             node2 = scene.add_node()
+            node2_input1 = node2.set_input('input1')
             node2.set_position(QPointF(300, 100))
 
-            conn1 = node1.connect(node2)
+            conn1 = node1_output1.connect(node2_input1)
 
             view = NodeGraphView()
             view.setBackgroundBrush(QBrush(Qt.gray))
