@@ -52,15 +52,25 @@ class NodeItem(QGraphicsRectItem):
         self.setRect(0, 0, 100, 60)
         self.setBrush(QBrush(Qt.red))
         self.setFlags(QGraphicsRectItem.ItemIsSelectable)
+        self.setAcceptHoverEvents(True)
         self.__connections = []
+        self.__pos = QPointF(0, 0)
+
+    def hoverMoveEvent(self, e):
+        self.__pos = e.pos()
 
     def set_position(self, pos):
         # type: (QPointF) -> NoReturn
         rect = self.rect()
-        self.setRect(QRectF(pos.x(), pos.y(), rect.width(), rect.height()))
 
-        diff_x = pos.x() - rect.x()
-        diff_y = pos.y() - rect.y()
+        w = rect.width()
+        h = rect.height()
+        x = pos.x() - w / 2
+        y = pos.y() - h / 2
+        self.setRect(QRectF(x, y, w, h))
+
+        diff_x = x - rect.x()
+        diff_y = y - rect.y()
         diff = QPointF(diff_x, diff_y)
 
         for p in self.__connections:
@@ -86,9 +96,10 @@ class NodeItem(QGraphicsRectItem):
 
     def mouseMoveEvent(self, e):
         # type: (QGraphicsSceneMouseEvent) -> NoReturn
-        pos = e.pos()
-        rect = self.rect()
-        pos = QPointF(pos.x() - rect.width() / 2, pos.y() - rect.height() / 2)
+        delta = e.pos() - self.__pos
+        self.__pos = e.pos()
+
+        pos = self.rect().center() + delta
         self.set_position(pos)
 
     def paint(self, painter, item, widget):
