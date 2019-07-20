@@ -52,11 +52,30 @@ class NodeGraphScene(QGraphicsScene):
 
     def __init__(self, *args, **kwargs):
         super(NodeGraphScene, self).__init__(*args, **kwargs)
+        self.__mouse_overed_items = set()
 
     def add_node(self):
         node = NodeItem()
         self.addItem(node)
         return node
+
+    def mouseMoveEvent(self, e):
+        # type: (QGraphicsSceneMouseEvent) -> NoReturn
+        all_items = self.items()
+        over_items = self.items(e.scenePos())
+
+        for item in all_items:
+            if item in over_items:
+                if hasattr(item, 'mouseOverEvent'):
+                    item.mouseOverEvent(e)
+                self.__mouse_overed_items.add(item)
+
+            elif item in self.__mouse_overed_items:
+                if hasattr(item, 'mouseLeaveEvent'):
+                    item.mouseLeaveEvent(e)
+                self.__mouse_overed_items.remove(item)
+
+        super(NodeGraphScene, self).mouseMoveEvent(e)
 
 
 if __name__ == '__main__':
@@ -75,7 +94,7 @@ if __name__ == '__main__':
             node2_input1 = node2.set_input('input1')
             node2.set_position(QPointF(300, 100))
 
-            conn1 = node1_output1.connect(node2_input1)
+            # conn1 = node1_output1.connect(node2_input1)
 
             view = NodeGraphView()
             view.setBackgroundBrush(QBrush(Qt.gray))
