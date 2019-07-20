@@ -21,6 +21,10 @@ class ItemStyles(object):
     CONNECTION_FOREGROUND_NORMAL = QPen(QBrush(Qt.black), 1)
     CONNECTION_FOREGROUND_NORMAL_SHAPE = QPen(QBrush(Qt.transparent), 10)
 
+    NODE_Z_ORDER = 100
+    CONNECTION_Z_ORDER = 200
+    PLUG_Z_ORDER = 300
+
 
 class GraphicsItemSignal(object):
 
@@ -38,15 +42,13 @@ class GraphicsItemSignal(object):
             slot(args)
 
 
-class ConnectionPoint(QGraphicsEllipseItem):
-
-    z_order = 20
+class PlugItem(QGraphicsEllipseItem):
 
     @property
     def name(self): return self.__name
 
     @property
-    def pos(self): return self.__pos
+    def is_input(self): return self.__is_input
 
     @property
     def source(self): return self.__source
@@ -54,45 +56,36 @@ class ConnectionPoint(QGraphicsEllipseItem):
     @property
     def destination(self): return self.__destination
 
-    @property
-    def is_source(self): return self.destination is not None
-
-    @property
-    def is_destination(self): return self.source is not None
-
     __connection_candidate = None
 
-    def __init__(self, name, position, parent=None):
-        # type: (QPoint, QGraphicsItem) -> NoReturn
-        super(ConnectionPoint, self).__init__(parent)
-        self.setRect(position.x() - 10, position.y() - 10, 20, 20)
+    def __init__(self, scene, name, is_input):
+        # type: (QGraphicsScene, QPoint, QGraphicsItem) -> NoReturn
+        super(PlugItem, self).__init__(parent=None)
+
+        scene.addItem(self)
+        self.setRect(-10, -10, 20, 20)
         self.setBrush(ItemStyles.PLUG_BACKGROUND_NORMAL)
         self.setFlags(QGraphicsRectItem.ItemIsSelectable)
-        self.setZValue(ConnectionPoint.z_order)
         self.setAcceptHoverEvents(True)
+        self.setZValue(ItemStyles.PLUG_Z_ORDER)
+
         self.__name = name
-        self.__pos = position
+        self.__is_input = is_input
         self.__source = None
         self.__destination = None
         self.__connection = None
         self.__is_connection_candidate = False
+
         self.moved = GraphicsItemSignal(QPointF)
 
-    def move(self, diff):
-        # type: (QPointF) -> NoReturn
-        x = self.pos.x() + diff.x()
-        y = self.pos.y() + diff.y()
-        self.pos.setX(x)
-        self.pos.setY(y)
-
-        self.setRect(x - 10, y - 10, 20, 20)
-
-        self.moved.emit(self.pos)
+    def translate(self, position):
+        # type: (QPoint) -> NoReturn
+        self.setPos(position)
+        self.moved.emit(position)
 
     def connect(self, other):
-        # type: (ConnectionPoint) -> ConnectionItem
-        self.__connection = ConnectionItem(self, other)
-        self.scene().addItem(self.__connection)
+        # type: (PlugItem) -> EdgeItem
+        self.__connection = EdgeItem(self.scene(), self, other)
 
         def _delete_connection(_):
             self.disconnect()
@@ -127,7 +120,7 @@ class ConnectionPoint(QGraphicsEllipseItem):
         # type: (QGraphicsSceneMouseEvent) -> NoReturn
         self.setBrush(ItemStyles.PLUG_BACKGROUND_TARGET)
 
-        conn = ConnectionPoint.__connection_candidate
+        conn = PlugItem.__connection_candidate
         if conn is not None and conn.parentItem() != self:
             if conn.source is None:
                 conn.set_source(self)
@@ -138,7 +131,7 @@ class ConnectionPoint(QGraphicsEllipseItem):
         # type: (QGraphicsSceneMouseEvent) -> NoReturn
         self.__update_styles()
 
-        conn = ConnectionPoint.__connection_candidate
+        conn = PlugItem.__connection_candidate
         if conn is not None and conn.parentItem() != self:
             if conn.source == self:
                 conn.set_source(None)
@@ -148,43 +141,38 @@ class ConnectionPoint(QGraphicsEllipseItem):
     def mousePressEvent(self, e):
         # type: (QGraphicsSceneMouseEvent) -> NoReturn
         if self.__connection is None:
-            tmp_other = ConnectionPoint(None, e.pos())
+            tmp_other = PlugItem(self.scene(), None, not self.is_input)
             tmp_other.setVisible(False)
-            if self.is_source:
-                conn = ConnectionItem(self, None)
-                conn.set_start(self.pos)
-                conn.set_end(e.pos())
+            if self.is_input:
+                conn = EdgeItem(self.scene(), self, None)
+                conn.set_end(e.scenePos())
             else:
-                conn = ConnectionItem(None, self)
-                conn.set_start(e.pos())
-                conn.set_end(self.pos)
-            self.scene().addItem(conn)
-            conn.setParentItem(self)
-            ConnectionPoint.__connection_candidate = conn
+                conn = EdgeItem(self.scene(), None, self)
+                conn.set_start(e.scenePos())
+            PlugItem.__connection_candidate = conn
 
-        super(ConnectionPoint, self).mousePressEvent(e)
+        super(PlugItem, self).mousePressEvent(e)
 
     def mouseMoveEvent(self, e):
         # type: (QGraphicsSceneMouseEvent) -> NoReturn
         if self.__connection is None:
-            conn = ConnectionPoint.__connection_candidate
-            if conn.parentItem() == self:
-                if conn.source == self:
-                    conn.set_end(e.pos())
-                elif conn.destination == self:
-                    conn.set_start(e.pos())
+            conn = PlugItem.__connection_candidate
+            if conn.source == self:
+                conn.set_end(e.scenePos())
+            elif conn.destination == self:
+                conn.set_start(e.scenePos())
         else:
-            if self.is_source:
-                self.__connection.set_start(e.pos())
+            if self.is_input:
+                self.__connection.set_start(e.scenePos())
             elif self.is_destination:
-                self.__connection.set_end(e.pos())
+                self.__connection.set_end(e.scenePos())
 
         self.setBrush(ItemStyles.PLUG_BACKGROUND_ACTIVE)
-        super(ConnectionPoint, self).mouseMoveEvent(e)
+        super(PlugItem, self).mouseMoveEvent(e)
 
     def mouseReleaseEvent(self, e):
         # type: (QGraphicsSceneMouseEvent) -> NoReturn
-        conn = ConnectionPoint.__connection_candidate
+        conn = PlugItem.__connection_candidate
         if conn is not None:
             source = conn.source
             destination = conn.destination
@@ -192,15 +180,15 @@ class ConnectionPoint(QGraphicsEllipseItem):
                 source.connect(destination)
 
             self.scene().removeItem(conn)
-            ConnectionPoint.__connection_candidate = None
+            PlugItem.__connection_candidate = None
         else:
             self.__reset_connection()
 
         self.__update_styles()
-        super(ConnectionPoint, self).mouseReleaseEvent(e)
+        super(PlugItem, self).mouseReleaseEvent(e)
 
     def __reset_connection(self):
-        self.move(QPoint(0, 0))
+        self.translate(self.pos())
 
     def __update_styles(self):
         if self.__connection is None:
@@ -211,58 +199,56 @@ class ConnectionPoint(QGraphicsEllipseItem):
 
 class NodeItem(QGraphicsRectItem):
 
-    z_order = 0
-
     @property
     def name(self): return self.__name
 
-    def __init__(self, name, parent=None):
-        super(NodeItem, self).__init__(parent)
+    def __init__(self, scene, name):
+        # type: (QGraphicsScene, str) -> NoReturn
+        super(NodeItem, self).__init__(parent=None)
+
+        scene.addItem(self)
+
         self.setRect(ItemStyles.NODE_RECT)
         self.setFlags(QGraphicsRectItem.ItemIsSelectable)
-        self.setZValue(NodeItem.z_order)
+        self.setZValue(ItemStyles.NODE_Z_ORDER)
+
         self.__name = name
-        self.__connections = []
+        self.__source_plugs = []
+        self.__dest_plugs = []
 
     def set_position(self, pos):
-        # type: (QPointF) -> NoReturn
+        # type: (QPoint) -> NoReturn
         rect = self.rect()
 
         w = rect.width()
         h = rect.height()
         x = pos.x() - w / 2
         y = pos.y() - h / 2
-        self.setRect(QRectF(x, y, w, h))
+        self.setPos(x, y)
 
-        diff_x = x - rect.x()
-        diff_y = y - rect.y()
-        diff = QPointF(diff_x, diff_y)
+        self.__align_source_plugs()
+        self.__align_dest_plugs()
 
-        for p in self.__connections:
-            p.move(diff)
+    def add_input(self, name):
+        # type: (str) -> PlugItem
+        plug = PlugItem(self.scene(), name, True)
+        self.__source_plugs.append(plug)
+        self.__align_source_plugs()
+        return plug
 
-    def set_input(self, name):
-        # type: (str) -> ConnectionPoint
-        rect = self.rect()
-        point = ConnectionPoint(name, QPoint(rect.x(), rect.y() + rect.height() / 2))
-        self.__connections.append(point)
-        self.scene().addItem(point)
-        return point
-
-    def set_output(self, name):
-        # type: (str) -> ConnectionPoint
-        rect = self.rect()
-        point = ConnectionPoint(name, QPoint(rect.x() + rect.width(), rect.y() + rect.height() / 2))
-        self.__connections.append(point)
-        self.scene().addItem(point)
-        return point
+    def add_output(self, name):
+        # type: (str) -> PlugItem
+        plug = PlugItem(self.scene(), name, False)
+        self.__dest_plugs.append(plug)
+        self.__align_dest_plugs()
+        return plug
 
     def mouseMoveEvent(self, e):
         # type: (QGraphicsSceneMouseEvent) -> NoReturn
         delta = e.pos() - e.lastPos()
 
-        pos = self.rect().center() + delta
-        self.set_position(pos)
+        pos = self.pos() + self.rect().center() + delta
+        self.set_position(QPoint(pos.x(), pos.y()))
 
         super(NodeItem, self).mouseMoveEvent(e)
 
@@ -272,10 +258,34 @@ class NodeItem(QGraphicsRectItem):
             painter.setPen(ItemStyles.NODE_FOREGROUND_ACTIVE)
         painter.drawRoundedRect(self.rect(), ItemStyles.NODE_CORNER_RADIUS, ItemStyles.NODE_CORNER_RADIUS)
 
+    def __align_source_plugs(self):
+        pos = self.pos()
+        rect = self.rect()
 
-class ConnectionItem(QGraphicsLineItem):
+        x = pos.x()
 
-    z_order = 10
+        y_base = pos.y()
+        y_offset = rect.height() / float(len(self.__source_plugs) + 1)
+
+        for i, plug in enumerate(self.__source_plugs):
+            y = y_base + y_offset * (i + 1)
+            plug.translate(QPoint(x, y))
+
+    def __align_dest_plugs(self):
+        pos = self.pos()
+        rect = self.rect()
+
+        x = pos.x() + rect.width()
+
+        y_base = pos.y()
+        y_offset = rect.height() / float(len(self.__dest_plugs) + 1)
+
+        for i, plug in enumerate(self.__dest_plugs):
+            y = y_base + y_offset * (i + 1)
+            plug.translate(QPoint(x, y))
+
+
+class EdgeItem(QGraphicsLineItem):
 
     @property
     def source(self): return self.__p1
@@ -283,26 +293,28 @@ class ConnectionItem(QGraphicsLineItem):
     @property
     def destination(self): return self.__p2
 
-    def __init__(self, p1=None, p2=None, parent=None):
-        # type: (ConnectionPoint, ConnectionPoint) -> NoReturn
-        super(ConnectionItem, self).__init__(parent)
-        self.setZValue(ConnectionItem.z_order)
+    def __init__(self, scene, p1=None, p2=None):
+        # type: (QGraphicsScene, PlugItem, PlugItem) -> NoReturn
+        super(EdgeItem, self).__init__(parent=None)
+
+        scene.addItem(self)
         self.setFlags(QGraphicsRectItem.ItemIsSelectable | QGraphicsLineItem.ItemIsFocusable)
         self.setPen(ItemStyles.CONNECTION_FOREGROUND_NORMAL)
-
-        self.delete_requested = GraphicsItemSignal(ConnectionItem)
+        self.setZValue(ItemStyles.CONNECTION_Z_ORDER)
 
         self.__p1 = p1
         self.__p2 = p2
-        self.__selection_bounds = QGraphicsLineItem()
+        self.__selection_bounds = QGraphicsLineItem(parent=None)
         self.__selection_bounds.setPen(ItemStyles.CONNECTION_FOREGROUND_NORMAL_SHAPE)
 
+        self.delete_requested = GraphicsItemSignal(EdgeItem)
+
         if p1 is not None:
-            self.set_start(p1.pos)
+            self.set_start(p1.pos())
             p1.moved.connect(self.set_start)
 
         if p2 is not None:
-            self.set_end(p2.pos)
+            self.set_end(p2.pos())
             p2.moved.connect(self.set_end)
 
     def clear(self):
@@ -313,11 +325,11 @@ class ConnectionItem(QGraphicsLineItem):
             self.destination.moved.disconnect(self.set_end)
 
     def set_source(self, source):
-        # type: (ConnectionPoint) -> NoReturn
+        # type: (PlugItem) -> NoReturn
         self.__p1 = source
 
     def set_destination(self, destination):
-        # type: (ConnectionPoint) -> NoReturn
+        # type: (PlugItem) -> NoReturn
         self.__p2 = destination
 
     def set_start(self, point):
