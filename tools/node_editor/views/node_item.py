@@ -7,6 +7,21 @@ import inspect
 from tools.node_editor.views.pyside_modules import *
 
 
+class ItemStyles(object):
+
+    NODE_FOREGROUND_ACTIVE = QPen(QBrush(Qt.black), 1, Qt.DashLine)
+    NODE_RECT = QRect(0, 0, 100, 60)
+    NODE_CORNER_RADIUS = 5
+
+    PLUG_BACKGROUND_NORMAL = QBrush(Qt.white)
+    PLUG_BACKGROUND_ACTIVE = QBrush(Qt.red)
+    PLUG_BACKGROUND_TARGET = QBrush(Qt.blue)
+    PLUG_BACKGROUND_CONNECTED = QBrush(Qt.lightGray)
+
+    CONNECTION_FOREGROUND_NORMAL = QPen(QBrush(Qt.black), 1)
+    CONNECTION_FOREGROUND_NORMAL_SHAPE = QPen(QBrush(Qt.transparent), 10)
+
+
 class GraphicsItemSignal(object):
 
     def __init__(self, _):
@@ -28,6 +43,9 @@ class ConnectionPoint(QGraphicsEllipseItem):
     z_order = 20
 
     @property
+    def name(self): return self.__name
+
+    @property
     def pos(self): return self.__pos
 
     @property
@@ -44,14 +62,15 @@ class ConnectionPoint(QGraphicsEllipseItem):
 
     __connection_candidate = None
 
-    def __init__(self, position, parent=None):
+    def __init__(self, name, position, parent=None):
         # type: (QPoint, QGraphicsItem) -> NoReturn
         super(ConnectionPoint, self).__init__(parent)
         self.setRect(position.x() - 10, position.y() - 10, 20, 20)
-        self.setBrush(QBrush(Qt.white))
+        self.setBrush(ItemStyles.PLUG_BACKGROUND_NORMAL)
         self.setFlags(QGraphicsRectItem.ItemIsSelectable)
         self.setZValue(ConnectionPoint.z_order)
         self.setAcceptHoverEvents(True)
+        self.__name = name
         self.__pos = position
         self.__source = None
         self.__destination = None
@@ -83,6 +102,9 @@ class ConnectionPoint(QGraphicsEllipseItem):
         other.__source = self
         other.__connection = self.__connection
 
+        self.__update_styles()
+        other.__update_styles()
+
         return self.__connection
 
     def disconnect(self):
@@ -94,35 +116,39 @@ class ConnectionPoint(QGraphicsEllipseItem):
             destination = self.__connection.destination
             if source is not None:
                 source.__connection = None
+                source.__update_styles()
             if destination is not None:
                 destination.__connection = None
+                destination.__update_styles()
 
             self.__connection = None
 
     def mouseOverEvent(self, e):
         # type: (QGraphicsSceneMouseEvent) -> NoReturn
+        self.setBrush(ItemStyles.PLUG_BACKGROUND_TARGET)
+
         conn = ConnectionPoint.__connection_candidate
         if conn is not None and conn.parentItem() != self:
             if conn.source is None:
                 conn.set_source(self)
             elif conn.destination is None:
                 conn.set_destination(self)
-        self.setBrush(QBrush(Qt.blue))
 
     def mouseLeaveEvent(self, e):
         # type: (QGraphicsSceneMouseEvent) -> NoReturn
+        self.__update_styles()
+
         conn = ConnectionPoint.__connection_candidate
         if conn is not None and conn.parentItem() != self:
             if conn.source == self:
                 conn.set_source(None)
             elif conn.destination == self:
                 conn.set_destination(None)
-        self.setBrush(QBrush(Qt.white))
 
     def mousePressEvent(self, e):
         # type: (QGraphicsSceneMouseEvent) -> NoReturn
         if self.__connection is None:
-            tmp_other = ConnectionPoint(e.pos())
+            tmp_other = ConnectionPoint(None, e.pos())
             tmp_other.setVisible(False)
             if self.is_source:
                 conn = ConnectionItem(self, None)
@@ -140,8 +166,6 @@ class ConnectionPoint(QGraphicsEllipseItem):
 
     def mouseMoveEvent(self, e):
         # type: (QGraphicsSceneMouseEvent) -> NoReturn
-        self.setBrush(QBrush(Qt.red))
-
         if self.__connection is None:
             conn = ConnectionPoint.__connection_candidate
             if conn.parentItem() == self:
@@ -155,12 +179,11 @@ class ConnectionPoint(QGraphicsEllipseItem):
             elif self.is_destination:
                 self.__connection.set_end(e.pos())
 
+        self.setBrush(ItemStyles.PLUG_BACKGROUND_ACTIVE)
         super(ConnectionPoint, self).mouseMoveEvent(e)
 
     def mouseReleaseEvent(self, e):
         # type: (QGraphicsSceneMouseEvent) -> NoReturn
-        self.setBrush(QBrush(Qt.white))
-
         conn = ConnectionPoint.__connection_candidate
         if conn is not None:
             source = conn.source
@@ -173,22 +196,32 @@ class ConnectionPoint(QGraphicsEllipseItem):
         else:
             self.__reset_connection()
 
+        self.__update_styles()
         super(ConnectionPoint, self).mouseReleaseEvent(e)
 
     def __reset_connection(self):
         self.move(QPoint(0, 0))
+
+    def __update_styles(self):
+        if self.__connection is None:
+            self.setBrush(ItemStyles.PLUG_BACKGROUND_NORMAL)
+        else:
+            self.setBrush(ItemStyles.PLUG_BACKGROUND_CONNECTED)
 
 
 class NodeItem(QGraphicsRectItem):
 
     z_order = 0
 
-    def __init__(self, parent=None):
+    @property
+    def name(self): return self.__name
+
+    def __init__(self, name, parent=None):
         super(NodeItem, self).__init__(parent)
-        self.setRect(0, 0, 100, 60)
-        self.setBrush(QBrush(Qt.red))
+        self.setRect(ItemStyles.NODE_RECT)
         self.setFlags(QGraphicsRectItem.ItemIsSelectable)
         self.setZValue(NodeItem.z_order)
+        self.__name = name
         self.__connections = []
 
     def set_position(self, pos):
@@ -211,7 +244,7 @@ class NodeItem(QGraphicsRectItem):
     def set_input(self, name):
         # type: (str) -> ConnectionPoint
         rect = self.rect()
-        point = ConnectionPoint(QPoint(rect.x(), rect.y() + rect.height() / 2))
+        point = ConnectionPoint(name, QPoint(rect.x(), rect.y() + rect.height() / 2))
         self.__connections.append(point)
         self.scene().addItem(point)
         return point
@@ -219,7 +252,7 @@ class NodeItem(QGraphicsRectItem):
     def set_output(self, name):
         # type: (str) -> ConnectionPoint
         rect = self.rect()
-        point = ConnectionPoint(QPoint(rect.x() + rect.width(), rect.y() + rect.height() / 2))
+        point = ConnectionPoint(name, QPoint(rect.x() + rect.width(), rect.y() + rect.height() / 2))
         self.__connections.append(point)
         self.scene().addItem(point)
         return point
@@ -236,10 +269,8 @@ class NodeItem(QGraphicsRectItem):
     def paint(self, painter, item, widget):
         # type: (QPainter, QStyleOptionGraphicsItem, QWidget) -> NoReturn
         if self.isSelected():
-            pen = self.pen()
-            dashed_pen = QPen(pen.brush(), pen.width(), Qt.DashLine)
-            painter.setPen(dashed_pen)
-        painter.drawRoundedRect(self.rect(), 5, 5)
+            painter.setPen(ItemStyles.NODE_FOREGROUND_ACTIVE)
+        painter.drawRoundedRect(self.rect(), ItemStyles.NODE_CORNER_RADIUS, ItemStyles.NODE_CORNER_RADIUS)
 
 
 class ConnectionItem(QGraphicsLineItem):
@@ -257,14 +288,14 @@ class ConnectionItem(QGraphicsLineItem):
         super(ConnectionItem, self).__init__(parent)
         self.setZValue(ConnectionItem.z_order)
         self.setFlags(QGraphicsRectItem.ItemIsSelectable | QGraphicsLineItem.ItemIsFocusable)
-        self.setPen(QPen(QBrush(Qt.black), 1))
+        self.setPen(ItemStyles.CONNECTION_FOREGROUND_NORMAL)
 
         self.delete_requested = GraphicsItemSignal(ConnectionItem)
 
         self.__p1 = p1
         self.__p2 = p2
         self.__selection_bounds = QGraphicsLineItem()
-        self.__selection_bounds.setPen(QPen(self.pen().brush(), 10))
+        self.__selection_bounds.setPen(ItemStyles.CONNECTION_FOREGROUND_NORMAL_SHAPE)
 
         if p1 is not None:
             self.set_start(p1.pos)

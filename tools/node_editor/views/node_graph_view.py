@@ -54,8 +54,8 @@ class NodeGraphScene(QGraphicsScene):
         super(NodeGraphScene, self).__init__(*args, **kwargs)
         self.__mouse_overed_items = set()
 
-    def add_node(self):
-        node = NodeItem()
+    def add_node(self, name):
+        node = NodeItem(name)
         self.addItem(node)
         return node
 
@@ -86,11 +86,11 @@ if __name__ == '__main__':
             scene = NodeGraphScene(0, 0, 640, 480)
             scene.addRect(0, 0, scene.width(), scene.height(), QPen(Qt.transparent), QBrush(Qt.white))
 
-            node1 = scene.add_node()
+            node1 = scene.add_node('node1')
             node1_output1 = node1.set_output('output1')
             node1.set_position(QPointF(100, 100))
 
-            node2 = scene.add_node()
+            node2 = scene.add_node('node2')
             node2_input1 = node2.set_input('input1')
             node2.set_position(QPointF(300, 100))
 
