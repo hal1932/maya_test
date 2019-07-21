@@ -164,12 +164,12 @@ class PlugItem(QGraphicsEllipseItem):
 class EdgeItem(QGraphicsLineItem):
 
     @property
-    def source(self): return self.__p1
+    def source(self): return self.__source
 
     @property
-    def destination(self): return self.__p2
+    def destination(self): return self.__destination
 
-    def __init__(self, scene, p1=None, p2=None):
+    def __init__(self, scene, source=None, destination=None):
         # type: (QGraphicsScene, PlugItem, PlugItem) -> NoReturn
         super(EdgeItem, self).__init__(parent=None)
 
@@ -178,20 +178,20 @@ class EdgeItem(QGraphicsLineItem):
         self.setPen(ItemStyles.CONNECTION_FOREGROUND_NORMAL)
         self.setZValue(ItemStyles.CONNECTION_Z_ORDER)
 
-        self.__p1 = p1
-        self.__p2 = p2
+        self.__source = source
+        self.__destination = destination
         self.__selection_bounds = QGraphicsLineItem(parent=None)
         self.__selection_bounds.setPen(ItemStyles.CONNECTION_FOREGROUND_NORMAL_SHAPE)
 
         self.delete_requested = GraphicsItemSignal(EdgeItem)
 
-        if p1 is not None:
-            self.set_start(p1.pos())
-            p1.moved.connect(self.set_start)
+        if source is not None:
+            self.set_start(source.pos())
+            source.moved.connect(self.set_start)
 
-        if p2 is not None:
-            self.set_end(p2.pos())
-            p2.moved.connect(self.set_end)
+        if destination is not None:
+            self.set_end(destination.pos())
+            destination.moved.connect(self.set_end)
 
     def clear(self):
         if self.source is not None:
@@ -202,11 +202,11 @@ class EdgeItem(QGraphicsLineItem):
 
     def set_source(self, source):
         # type: (PlugItem) -> NoReturn
-        self.__p1 = source
+        self.__source = source
 
     def set_destination(self, destination):
         # type: (PlugItem) -> NoReturn
-        self.__p2 = destination
+        self.__destination = destination
 
     def set_start(self, point):
         # type: (QPointF) -> NoReturn
