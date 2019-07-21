@@ -57,9 +57,7 @@ class PlugItem(QGraphicsEllipseItem):
         print 'connect: {} -> {}'.format(self.name, other.name)
         self.__edges = EdgeItem(self.scene(), self, other)
 
-        def _delete_connection(_):
-            self.disconnect()
-        self.__edges.delete_requested.connect(_delete_connection)
+        self.__edges.delete_requested.connect(self.disconnect)
 
         self.__destination = other
         other.__source = self
@@ -70,23 +68,27 @@ class PlugItem(QGraphicsEllipseItem):
 
         return self.__edges
 
-    def disconnect(self):
-        if self.__edges is not None:
-            self.scene().removeItem(self.__edges)
-            self.__edges.clear()
+    def disconnect(self, edge):
+        # type: (EdgeItem) -> NoReturn
+        if self.__edges != edge:
+            return
 
-            source = self.__edges.source
-            destination = self.__edges.destination
-            if source is not None:
-                source.__edges = None
-                source.__destination = None
-                source.__update_styles()
-            if destination is not None:
-                destination.__edges = None
-                destination.__source = None
-                destination.__update_styles()
+        self.scene().removeItem(edge)
+        edge.clear()
 
-            self.__edges = None
+        source = edge.source
+        if source is not None:
+            source.__edges = None
+            source.__destination = None
+            source.__update_styles()
+
+        destination = edge.destination
+        if destination is not None:
+            destination.__edges = None
+            destination.__source = None
+            destination.__update_styles()
+
+        self.__edges = None
 
     def mouseOverEvent(self, e):
         # type: (QGraphicsSceneMouseEvent) -> NoReturn
