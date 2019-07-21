@@ -120,23 +120,23 @@ class PlugItem(QGraphicsEllipseItem):
         # type: (QGraphicsSceneMouseEvent) -> NoReturn
         self.setBrush(ItemStyles.PLUG_BACKGROUND_TARGET)
 
-        edge = PlugItem.__edge_candidate
-        if edge is not None and edge.parentItem() != self:
-            if edge.source is None:
-                edge.set_source(self)
-            elif edge.destination is None:
-                edge.set_destination(self)
+        tmp_edge= PlugItem.__edge_candidate
+        if tmp_edge is not None and tmp_edge.parentItem() != self:
+            if tmp_edge.source is None:
+                tmp_edge.set_source(self)
+            elif tmp_edge.destination is None:
+                tmp_edge.set_destination(self)
 
     def mouseLeaveEvent(self, e):
         # type: (QGraphicsSceneMouseEvent) -> NoReturn
         self.__update_styles()
 
-        edge = PlugItem.__edge_candidate
-        if edge is not None and edge.parentItem() != self:
-            if edge.source == self:
-                edge.set_source(None)
-            elif edge.destination == self:
-                edge.set_destination(None)
+        tmp_edge = PlugItem.__edge_candidate
+        if tmp_edge is not None and tmp_edge.parentItem() != self:
+            if tmp_edge.source == self:
+                tmp_edge.set_source(None)
+            elif tmp_edge.destination == self:
+                tmp_edge.set_destination(None)
 
     def mousePressEvent(self, e):
         # type: (QGraphicsSceneMouseEvent) -> NoReturn
@@ -154,25 +154,25 @@ class PlugItem(QGraphicsEllipseItem):
 
     def mouseMoveEvent(self, e):
         # type: (QGraphicsSceneMouseEvent) -> NoReturn
-        conn = PlugItem.__edge_candidate
-        if conn.source == self:
-            conn.set_end(e.scenePos())
-        elif conn.destination == self:
-            conn.set_start(e.scenePos())
+        tmp_edge= PlugItem.__edge_candidate
+        if tmp_edge.source == self:
+            tmp_edge.set_end(e.scenePos())
+        elif tmp_edge.destination == self:
+            tmp_edge.set_start(e.scenePos())
 
         self.setBrush(ItemStyles.PLUG_BACKGROUND_ACTIVE)
         super(PlugItem, self).mouseMoveEvent(e)
 
     def mouseReleaseEvent(self, e):
         # type: (QGraphicsSceneMouseEvent) -> NoReturn
-        edge = PlugItem.__edge_candidate
-        if edge is not None:
-            source = edge.source
-            destination = edge.destination
+        tmp_edge = PlugItem.__edge_candidate
+        if tmp_edge is not None:
+            source = tmp_edge.source
+            destination = tmp_edge.destination
             if source is not None and destination is not None:
                 source.connect(destination)
 
-            self.scene().removeItem(edge)
+            self.scene().removeItem(tmp_edge)
             PlugItem.__edge_candidate = None
         else:
             self.__reset_connection()
