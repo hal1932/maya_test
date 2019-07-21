@@ -180,6 +180,11 @@ class PlugItem(QGraphicsEllipseItem):
         self.__update_styles()
         super(PlugItem, self).mouseReleaseEvent(e)
 
+    def paint(self, painter, option, widget):
+        # type: (QPainter, QStyleOptionGraphicsItem, QWidget) -> NoReturn
+        painter.drawText(QPoint(10, 10), self.name)
+        super(PlugItem, self).paint(painter, option, widget)
+
     def __reset_connection(self):
         self.translate(self.pos())
 
