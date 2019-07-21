@@ -51,6 +51,10 @@ class PlugItem(QGraphicsEllipseItem):
 
     def connect(self, other):
         # type: (PlugItem) -> EdgeItem
+        if other.source == self:
+            return None
+
+        print 'connect: {} -> {}'.format(self.name, other.name)
         self.__edges = EdgeItem(self.scene(), self, other)
 
         def _delete_connection(_):
@@ -74,10 +78,12 @@ class PlugItem(QGraphicsEllipseItem):
             source = self.__edges.source
             destination = self.__edges.destination
             if source is not None:
-                source.__connection = None
+                source.__edges = None
+                source.__destination = None
                 source.__update_styles()
             if destination is not None:
-                destination.__connection = None
+                destination.__edges = None
+                destination.__source = None
                 destination.__update_styles()
 
             self.__edges = None
@@ -86,8 +92,8 @@ class PlugItem(QGraphicsEllipseItem):
         # type: (QGraphicsSceneMouseEvent) -> NoReturn
         self.setBrush(ItemStyles.PLUG_BACKGROUND_TARGET)
 
-        tmp_edge= PlugItem.__edge_candidate
-        if tmp_edge is not None and tmp_edge.parentItem() != self:
+        tmp_edge = PlugItem.__edge_candidate
+        if tmp_edge is not None and self not in tmp_edge:
             if tmp_edge.source is None:
                 tmp_edge.set_source(self)
             elif tmp_edge.destination is None:
@@ -98,7 +104,7 @@ class PlugItem(QGraphicsEllipseItem):
         self.__update_styles()
 
         tmp_edge = PlugItem.__edge_candidate
-        if tmp_edge is not None and tmp_edge.parentItem() != self:
+        if tmp_edge is not None and self not in tmp_edge:
             if tmp_edge.source == self:
                 tmp_edge.set_source(None)
             elif tmp_edge.destination == self:
@@ -109,11 +115,11 @@ class PlugItem(QGraphicsEllipseItem):
         tmp_other = PlugItem(self.scene(), None, not self.is_input)
         tmp_other.setVisible(False)
         if self.is_input:
-            edge = EdgeItem(self.scene(), self, None)
-            edge.set_end(e.scenePos())
-        else:
             edge = EdgeItem(self.scene(), None, self)
             edge.set_start(e.scenePos())
+        else:
+            edge = EdgeItem(self.scene(), self, None)
+            edge.set_end(e.scenePos())
         PlugItem.__edge_candidate = edge
 
         super(PlugItem, self).mousePressEvent(e)
@@ -192,6 +198,10 @@ class EdgeItem(QGraphicsLineItem):
         if destination is not None:
             self.set_end(destination.pos())
             destination.moved.connect(self.set_end)
+
+    def __contains__(self, item):
+        # type: (PlugItem) -> bool
+        return self.source == item or self.destination == item
 
     def clear(self):
         if self.source is not None:
