@@ -91,7 +91,7 @@ if __name__ == '__main__':
 
             node2 = scene.add_node('node2')
             node2_input1 = node2.add_input('input1')
-            # node2_input2 = node2.add_input('input2')
+            node2_input2 = node2.add_input('input2')
             node2.set_position(QPoint(300, 100))
 
             # node1_output1.connect(node2_input1)

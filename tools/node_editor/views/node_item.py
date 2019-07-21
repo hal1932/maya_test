@@ -56,7 +56,7 @@ class PlugItem(QGraphicsEllipseItem):
     @property
     def destination(self): return self.__destination
 
-    __connection_candidate = None
+    __edge_candidate = None
 
     def __init__(self, scene, name, is_input):
         # type: (QGraphicsScene, QPoint, QGraphicsItem) -> NoReturn
@@ -73,7 +73,7 @@ class PlugItem(QGraphicsEllipseItem):
         self.__is_input = is_input
         self.__source = None
         self.__destination = None
-        self.__connection = None
+        self.__edges = None
         self.__is_connection_candidate = False
 
         self.moved = GraphicsItemSignal(QPointF)
@@ -85,28 +85,28 @@ class PlugItem(QGraphicsEllipseItem):
 
     def connect(self, other):
         # type: (PlugItem) -> EdgeItem
-        self.__connection = EdgeItem(self.scene(), self, other)
+        self.__edges = EdgeItem(self.scene(), self, other)
 
         def _delete_connection(_):
             self.disconnect()
-        self.__connection.delete_requested.connect(_delete_connection)
+        self.__edges.delete_requested.connect(_delete_connection)
 
         self.__destination = other
         other.__source = self
-        other.__connection = self.__connection
+        other.__edges = self.__edges
 
         self.__update_styles()
         other.__update_styles()
 
-        return self.__connection
+        return self.__edges
 
     def disconnect(self):
-        if self.__connection is not None:
-            self.scene().removeItem(self.__connection)
-            self.__connection.clear()
+        if self.__edges is not None:
+            self.scene().removeItem(self.__edges)
+            self.__edges.clear()
 
-            source = self.__connection.source
-            destination = self.__connection.destination
+            source = self.__edges.source
+            destination = self.__edges.destination
             if source is not None:
                 source.__connection = None
                 source.__update_styles()
@@ -114,73 +114,73 @@ class PlugItem(QGraphicsEllipseItem):
                 destination.__connection = None
                 destination.__update_styles()
 
-            self.__connection = None
+            self.__edges = None
 
     def mouseOverEvent(self, e):
         # type: (QGraphicsSceneMouseEvent) -> NoReturn
         self.setBrush(ItemStyles.PLUG_BACKGROUND_TARGET)
 
-        conn = PlugItem.__connection_candidate
-        if conn is not None and conn.parentItem() != self:
-            if conn.source is None:
-                conn.set_source(self)
-            elif conn.destination is None:
-                conn.set_destination(self)
+        edge = PlugItem.__edge_candidate
+        if edge is not None and edge.parentItem() != self:
+            if edge.source is None:
+                edge.set_source(self)
+            elif edge.destination is None:
+                edge.set_destination(self)
 
     def mouseLeaveEvent(self, e):
         # type: (QGraphicsSceneMouseEvent) -> NoReturn
         self.__update_styles()
 
-        conn = PlugItem.__connection_candidate
-        if conn is not None and conn.parentItem() != self:
-            if conn.source == self:
-                conn.set_source(None)
-            elif conn.destination == self:
-                conn.set_destination(None)
+        edge = PlugItem.__edge_candidate
+        if edge is not None and edge.parentItem() != self:
+            if edge.source == self:
+                edge.set_source(None)
+            elif edge.destination == self:
+                edge.set_destination(None)
 
     def mousePressEvent(self, e):
         # type: (QGraphicsSceneMouseEvent) -> NoReturn
-        if self.__connection is None:
+        if self.__edges is None:
             tmp_other = PlugItem(self.scene(), None, not self.is_input)
             tmp_other.setVisible(False)
             if self.is_input:
-                conn = EdgeItem(self.scene(), self, None)
-                conn.set_end(e.scenePos())
+                edge = EdgeItem(self.scene(), self, None)
+                edge.set_end(e.scenePos())
             else:
-                conn = EdgeItem(self.scene(), None, self)
-                conn.set_start(e.scenePos())
-            PlugItem.__connection_candidate = conn
+                edge = EdgeItem(self.scene(), None, self)
+                edge.set_start(e.scenePos())
+            PlugItem.__edge_candidate = edge
 
         super(PlugItem, self).mousePressEvent(e)
 
     def mouseMoveEvent(self, e):
         # type: (QGraphicsSceneMouseEvent) -> NoReturn
-        if self.__connection is None:
-            conn = PlugItem.__connection_candidate
+        if self.__edges is None:
+            conn = PlugItem.__edge_candidate
             if conn.source == self:
                 conn.set_end(e.scenePos())
             elif conn.destination == self:
                 conn.set_start(e.scenePos())
         else:
             if self.is_input:
-                self.__connection.set_start(e.scenePos())
-            elif self.is_destination:
-                self.__connection.set_end(e.scenePos())
+                self.__edges.set_start(e.scenePos())
+            else:
+                self.__edges.set_end(e.scenePos())
 
         self.setBrush(ItemStyles.PLUG_BACKGROUND_ACTIVE)
         super(PlugItem, self).mouseMoveEvent(e)
 
     def mouseReleaseEvent(self, e):
         # type: (QGraphicsSceneMouseEvent) -> NoReturn
-        conn = PlugItem.__connection_candidate
-        if conn is not None:
-            source = conn.source
-            destination = conn.destination
+        edge = PlugItem.__edge_candidate
+        if edge is not None:
+            source = edge.source
+            destination = edge.destination
             if source is not None and destination is not None:
                 source.connect(destination)
 
-            self.scene().removeItem(conn)
-            PlugItem.__connection_candidate = None
+            self.scene().removeItem(edge)
+            PlugItem.__edge_candidate = None
         else:
             self.__reset_connection()
 
@@ -191,7 +191,7 @@ class PlugItem(QGraphicsEllipseItem):
         self.translate(self.pos())
 
     def __update_styles(self):
-        if self.__connection is None:
+        if self.__edges is None:
             self.setBrush(ItemStyles.PLUG_BACKGROUND_NORMAL)
         else:
             self.setBrush(ItemStyles.PLUG_BACKGROUND_CONNECTED)
