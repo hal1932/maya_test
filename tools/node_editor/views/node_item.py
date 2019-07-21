@@ -140,32 +140,25 @@ class PlugItem(QGraphicsEllipseItem):
 
     def mousePressEvent(self, e):
         # type: (QGraphicsSceneMouseEvent) -> NoReturn
-        if self.__edges is None:
-            tmp_other = PlugItem(self.scene(), None, not self.is_input)
-            tmp_other.setVisible(False)
-            if self.is_input:
-                edge = EdgeItem(self.scene(), self, None)
-                edge.set_end(e.scenePos())
-            else:
-                edge = EdgeItem(self.scene(), None, self)
-                edge.set_start(e.scenePos())
-            PlugItem.__edge_candidate = edge
+        tmp_other = PlugItem(self.scene(), None, not self.is_input)
+        tmp_other.setVisible(False)
+        if self.is_input:
+            edge = EdgeItem(self.scene(), self, None)
+            edge.set_end(e.scenePos())
+        else:
+            edge = EdgeItem(self.scene(), None, self)
+            edge.set_start(e.scenePos())
+        PlugItem.__edge_candidate = edge
 
         super(PlugItem, self).mousePressEvent(e)
 
     def mouseMoveEvent(self, e):
         # type: (QGraphicsSceneMouseEvent) -> NoReturn
-        if self.__edges is None:
-            conn = PlugItem.__edge_candidate
-            if conn.source == self:
-                conn.set_end(e.scenePos())
-            elif conn.destination == self:
-                conn.set_start(e.scenePos())
-        else:
-            if self.is_input:
-                self.__edges.set_start(e.scenePos())
-            else:
-                self.__edges.set_end(e.scenePos())
+        conn = PlugItem.__edge_candidate
+        if conn.source == self:
+            conn.set_end(e.scenePos())
+        elif conn.destination == self:
+            conn.set_start(e.scenePos())
 
         self.setBrush(ItemStyles.PLUG_BACKGROUND_ACTIVE)
         super(PlugItem, self).mouseMoveEvent(e)
