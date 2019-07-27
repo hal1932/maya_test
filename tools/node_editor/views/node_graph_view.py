@@ -2,9 +2,10 @@
 from __future__ import absolute_import
 from typing import *
 from six.moves import *
+
 from tools.node_editor.views.pyside_modules import *
-from tools.node_editor.views.node_item import *
-from tools.node_editor.views.graphics_view import *
+from tools.node_editor.views.node_item import NodeItem
+from tools.node_editor.views.graphics_view import GraphicsView
 
 
 class NodeGraphView(GraphicsView):

@@ -4,9 +4,8 @@ from typing import *
 from six.moves import *
 
 from tools.node_editor.views.pyside_modules import *
-from tools.node_editor.views.item_styles import *
-from tools.node_editor.views.graphics_item_signal import *
-from tools.node_editor.views.plug_item import *
+from tools.node_editor.views.item_styles import ItemStyles
+from tools.node_editor.views.plug_item import PlugItem
 
 
 class NodeItem(QGraphicsRectItem):
