@@ -156,7 +156,17 @@ class PlugItem(QGraphicsEllipseItem):
 
     def paint(self, painter, option, widget):
         # type: (QPainter, QStyleOptionGraphicsItem, QWidget) -> NoReturn
-        painter.drawText(QPoint(10, 10), self.name)
+        fm = QFontMetrics(painter.font())
+        label_width = fm.width(self.name)
+        label_height = fm.height() - fm.descent()
+
+        rect = self.rect()
+        if self.is_input:
+            label_pos = QPoint(rect.width() * 0.75, label_height / 2)
+        else:
+            label_pos = QPoint(-label_width - rect.width() * 0.75, label_height / 2)
+
+        painter.drawText(label_pos, self.name)
         super(PlugItem, self).paint(painter, option, widget)
 
     def __reset_connection(self):
