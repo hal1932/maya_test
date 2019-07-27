@@ -1,31 +1,44 @@
 # coding: utf-8
 from __future__ import absolute_import
 from typing import *
-from six.moves import *
 
-from tools.node_editor.views.pyside_modules import *
+from gui.pyside_modules import *
 from tools.node_editor.views.item_styles import ItemStyles
 from tools.node_editor.views.graphics_item_signal import GraphicsItemSignal
+from tools.node_editor.nodes.node import Attribute
 
 
 class PlugItem(QGraphicsEllipseItem):
 
     @property
-    def name(self): return self.__name
+    def name(self):
+        # type: () -> str
+        return self.__name
 
     @property
-    def is_input(self): return self.__is_input
+    def is_input(self):
+        # type: () -> bool
+        return self.__is_input
 
     @property
-    def source(self): return self.__source
+    def source(self):
+        # type: () -> PlugItem
+        return self.__source
 
     @property
-    def destinations(self): return self.__destinations
+    def destinations(self):
+        # type: () -> Iterable[PlugItem]
+        return self.__destinations
+
+    @property
+    def model(self):
+        # type: () -> Attribute
+        return self.__model
 
     __edge_candidate = None
 
-    def __init__(self, scene, name, is_input):
-        # type: (QGraphicsScene, QPoint, QGraphicsItem) -> NoReturn
+    def __init__(self, scene, name, is_input, model=None):
+        # type: (QGraphicsScene, QPoint, QGraphicsItem, Attribute) -> NoReturn
         super(PlugItem, self).__init__(parent=None)
 
         scene.addItem(self)
@@ -36,13 +49,20 @@ class PlugItem(QGraphicsEllipseItem):
         self.setZValue(ItemStyles.PLUG_Z_ORDER)
 
         self.__name = name
+        self.__model = None
         self.__is_input = is_input
         self.__source = None
         self.__destinations = set()
         self.__edges = set()
         self.__is_connection_candidate = False
 
+        self.set_model(model)
+
         self.moved = GraphicsItemSignal(QPointF)
+
+    def set_model(self, model):
+        # type: (Attribute) -> NoReturn
+        self.__model = model
 
     def translate(self, position):
         # type: (QPoint) -> NoReturn
@@ -69,6 +89,8 @@ class PlugItem(QGraphicsEllipseItem):
         self.__update_styles()
         other.__update_styles()
 
+        self.model.connect(other.model)
+
         return self.__edges
 
     def disconnect(self, edge):
@@ -78,6 +100,8 @@ class PlugItem(QGraphicsEllipseItem):
 
         self.scene().removeItem(edge)
         edge.clear()
+
+        self.model.disconnect(edge.destination.model)
 
         source = edge.source
         if source is not None:
@@ -183,10 +207,14 @@ class PlugItem(QGraphicsEllipseItem):
 class EdgeItem(QGraphicsLineItem):
 
     @property
-    def source(self): return self.__source
+    def source(self):
+        # type: () -> PlugItem
+        return self.__source
 
     @property
-    def destination(self): return self.__destination
+    def destination(self):
+        # type: () -> PlugItem
+        return self.__destination
 
     def __init__(self, scene, source=None, destination=None):
         # type: (QGraphicsScene, PlugItem, PlugItem) -> NoReturn

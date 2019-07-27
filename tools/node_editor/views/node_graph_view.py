@@ -1,11 +1,15 @@
 # coding: utf-8
 from __future__ import absolute_import
 from typing import *
-from six.moves import *
 
-from tools.node_editor.views.pyside_modules import *
+from gui.pyside_modules import *
+from gui.layouts import *
+from gui.widgets import *
+
 from tools.node_editor.views.node_item import NodeItem
 from tools.node_editor.views.graphics_view import GraphicsView
+from tools.node_editor.nodes.node import ConstNode, AddNode
+from tools.node_editor.nodes.node_graph import NodeGraph
 
 
 class NodeGraphView(GraphicsView):
@@ -55,8 +59,11 @@ class NodeGraphScene(QGraphicsScene):
         super(NodeGraphScene, self).__init__(*args, **kwargs)
         self.__mouse_overed_items = set()
 
-    def add_node(self, name):
-        node = NodeItem(self, name)
+    def add_node(self, cls, name):
+        # type: (type, str) -> NodeItem
+        model = cls()
+        model.initialize()
+        node = NodeItem(self, name, model)
         return node
 
     def mouseMoveEvent(self, e):
@@ -86,26 +93,51 @@ if __name__ == '__main__':
             scene = NodeGraphScene(0, 0, 640, 480)
             scene.addRect(0, 0, scene.width(), scene.height(), QPen(Qt.transparent), QBrush(Qt.white))
 
-            node1 = scene.add_node('node1')
-            node1_output1 = node1.add_output('output1')
+            node1 = scene.add_node(ConstNode, 'node1')
             node1.set_position(QPoint(100, 100))
 
-            node2 = scene.add_node('node2')
-            node2_input1 = node2.add_input('input1')
-            node2_input2 = node2.add_input('input2')
-            node2.add_input('aaa')
-            node2.add_input('bbb')
-            node2.add_input('ccc')
-            node2.set_position(QPoint(300, 100))
+            node2 = scene.add_node(ConstNode, 'node2')
+            node2.set_position(QPoint(100, 200))
 
-            # node1_output1.connect(node2_input1)
-            # node1_output1.connect(node2_input2)
+            node3 = scene.add_node(AddNode, 'node3')
+            node3.set_position(QPoint(300, 150))
 
             view = NodeGraphView()
             view.setBackgroundBrush(QBrush(Qt.gray))
             view.setScene(scene)
 
-            self.setCentralWidget(view)
+            const1_text = QLineEdit()
+            const2_text = QLineEdit()
+            calc_button = QPushButton(u'計算')
+            result_text = QLineEdit()
+
+            def _calc():
+                input1 = float(const1_text.text())
+                node1.model.set_data(input1)
+
+                input2 = float(const2_text.text())
+                node2.model.set_data(input2)
+
+                NodeGraph.evaluate(node3.model)
+                result_text.setText(str(node3.model.output.value))
+
+            calc_button.clicked.connect(_calc)
+
+            layout = hbox(
+                view,
+                vbox(
+                    hbox(QLabel(u'入力1'), const1_text),
+                    hbox(QLabel(u'入力2'), const2_text),
+                    hline(),
+                    hbox(calc_button, result_text),
+                    stretch()
+                )
+            )
+
+            widget = QWidget()
+            widget.setLayout(layout)
+
+            self.setCentralWidget(widget)
 
     import sys
     app = QApplication(sys.argv)

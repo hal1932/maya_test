@@ -1,9 +1,7 @@
 # coding: utf-8
 from __future__ import absolute_import
-from typing import *
-from six.moves import *
 
-from tools.node_editor.views.pyside_modules import *
+from gui.pyside_modules import *
 
 
 class ItemStyles(object):

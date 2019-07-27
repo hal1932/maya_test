@@ -1,11 +1,11 @@
 # coding: utf-8
 from __future__ import absolute_import
 from typing import *
-from six.moves import *
 
-from tools.node_editor.views.pyside_modules import *
+from gui.pyside_modules import *
 from tools.node_editor.views.item_styles import ItemStyles
 from tools.node_editor.views.plug_item import PlugItem
+from tools.node_editor.nodes.node import Node
 
 
 class NodeItem(QGraphicsRectItem):
@@ -13,8 +13,11 @@ class NodeItem(QGraphicsRectItem):
     @property
     def name(self): return self.__name
 
-    def __init__(self, scene, name):
-        # type: (QGraphicsScene, str) -> NoReturn
+    @property
+    def model(self): return self.__model
+
+    def __init__(self, scene, name, model=None):
+        # type: (QGraphicsScene, str, Node) -> NoReturn
         super(NodeItem, self).__init__(parent=None)
 
         scene.addItem(self)
@@ -24,8 +27,24 @@ class NodeItem(QGraphicsRectItem):
         self.setZValue(ItemStyles.NODE_Z_ORDER)
 
         self.__name = name
+        self.__model = None
         self.__source_plugs = []
         self.__dest_plugs = []
+
+        self.set_model(model)
+
+    def set_model(self, model):
+        # type: (Node) -> NoReturn
+        self.__model = model
+
+        if model is not None:
+            for input in model.inputs:
+                plug = self.add_input(input.name)
+                plug.set_model(input)
+
+            for output in model.outputs:
+                plug = self.add_output(output.name)
+                plug.set_model(output)
 
     def set_position(self, pos):
         # type: (QPoint) -> NoReturn
@@ -67,12 +86,13 @@ class NodeItem(QGraphicsRectItem):
 
     def paint(self, painter, item, widget):
         # type: (QPainter, QStyleOptionGraphicsItem, QWidget) -> NoReturn
+        label = '{} ({})'.format(self.name, self.__model.name)
         fm = QFontMetrics(painter.font())
-        label_width = fm.width(self.name)
+        label_width = fm.width(label)
 
         rect = self.rect()
         label_pos = QPoint(rect.x() + rect.width() / 2 - label_width / 2, rect.y() - fm.descent())
-        painter.drawText(label_pos, self.name)
+        painter.drawText(label_pos, label)
 
         if self.isSelected():
             painter.setPen(ItemStyles.NODE_FOREGROUND_ACTIVE)

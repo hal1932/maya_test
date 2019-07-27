@@ -48,9 +48,14 @@ class Attribute(object):
         self.__destination = None
 
     def connect(self, other):
-        # type: (Attribute) -> Attribute
+        # type: (Attribute) -> NoReturn
         self.__destination = other
         other.__source = self
+
+    def disconnect(self, other):
+        # type: (Attribute) -> NoReturn
+        self.__destination = None
+        other.__source = None
 
     def propagate(self):
         # type: () -> bool
@@ -123,6 +128,14 @@ class Node(object):
         self.__outputs[name] = attr
         return attr
 
+    def find_input_attribute(self, name):
+        # type: (str) -> Attribute
+        return self.__inputs.get(name, None)
+
+    def find_output_attribute(self, name):
+        # type: (str) -> Attribute
+        return self.__outputs.get(name, None)
+
     def propagate(self):
         # type:() -> bool
         has_next = False
@@ -139,14 +152,18 @@ class ConstNode(Node):
         # type: () -> Attribute
         return self.__output
 
-    def __init__(self, data):
+    def __init__(self, data=None):
         # type: (object) -> NoReturn
         super(ConstNode, self).__init__('const')
         self.__output = None
+        self.set_data(data)
+
+    def set_data(self, data):
+        # type: (object) -> NoReturn
         self.data = data
 
     def initialize(self):
-        self.__output = self.add_output_attribute(self.__output)
+        self.__output = self.add_output_attribute('output')
 
     def uninitialize(self):
         pass
@@ -212,6 +229,6 @@ if __name__ == '__main__':
 
     add1.compute()
 
-    print '{} + {} = {}'.format(const1.data, const2.data, add1.output.value)
+    # print '{} + {} = {}'.format(const1.data, const2.data, add1.output.value)
 
 

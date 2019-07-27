@@ -16,7 +16,7 @@ class NodeGraph(object):
     #     self.__nodes.append(node)
 
     @staticmethod
-    def evaluate(self, node):
+    def evaluate(node):
         # type: (Node) -> NoReturn
         traversals = [[node]]
 
@@ -66,5 +66,5 @@ if __name__ == '__main__':
 
     NodeGraph.evaluate(add2)
 
-    print '{} + {} = {}'.format(const1.data, const2.data, add1.output.value)
-    print '({} + {}) + {} = {}'.format(const1.data, const2.data, const3.data, add2.output.value)
+    # print '{} + {} = {}'.format(const1.data, const2.data, add1.output.value)
+    # print '({} + {}) + {} = {}'.format(const1.data, const2.data, const3.data, add2.output.value)
