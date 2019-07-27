@@ -29,7 +29,7 @@ class PlugItem(QGraphicsEllipseItem):
         super(PlugItem, self).__init__(parent=None)
 
         scene.addItem(self)
-        self.setRect(-10, -10, 20, 20)
+        self.setRect(ItemStyles.PLUG_RECT)
         self.setBrush(ItemStyles.PLUG_BACKGROUND_NORMAL)
         self.setFlags(QGraphicsRectItem.ItemIsSelectable)
         self.setAcceptHoverEvents(True)

@@ -9,9 +9,10 @@ from tools.node_editor.views.pyside_modules import *
 class ItemStyles(object):
 
     NODE_FOREGROUND_ACTIVE = QPen(QBrush(Qt.black), 1, Qt.DashLine)
-    NODE_RECT = QRect(0, 0, 100, 60)
+    NODE_INITIAL_RECT = QRect(0, 0, 100, 60)
     NODE_CORNER_RADIUS = 5
 
+    PLUG_RECT = QRect(-10, -10, 20, 20)
     PLUG_BACKGROUND_NORMAL = QBrush(Qt.white)
     PLUG_BACKGROUND_ACTIVE = QBrush(Qt.red)
     PLUG_BACKGROUND_TARGET = QBrush(Qt.blue)

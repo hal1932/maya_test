@@ -3,7 +3,6 @@ from __future__ import absolute_import
 from typing import *
 from six.moves import *
 
-import inspect
 from tools.node_editor.views.pyside_modules import *
 from tools.node_editor.views.item_styles import *
 from tools.node_editor.views.graphics_item_signal import *
@@ -21,7 +20,7 @@ class NodeItem(QGraphicsRectItem):
 
         scene.addItem(self)
 
-        self.setRect(ItemStyles.NODE_RECT)
+        self.setRect(ItemStyles.NODE_INITIAL_RECT)
         self.setFlags(QGraphicsRectItem.ItemIsSelectable)
         self.setZValue(ItemStyles.NODE_Z_ORDER)
 
@@ -46,6 +45,7 @@ class NodeItem(QGraphicsRectItem):
         # type: (str) -> PlugItem
         plug = PlugItem(self.scene(), name, True)
         self.__source_plugs.append(plug)
+        self.__update_rect()
         self.__align_source_plugs()
         return plug
 
@@ -53,6 +53,7 @@ class NodeItem(QGraphicsRectItem):
         # type: (str) -> PlugItem
         plug = PlugItem(self.scene(), name, False)
         self.__dest_plugs.append(plug)
+        self.__update_rect()
         self.__align_dest_plugs()
         return plug
 
@@ -70,6 +71,15 @@ class NodeItem(QGraphicsRectItem):
         if self.isSelected():
             painter.setPen(ItemStyles.NODE_FOREGROUND_ACTIVE)
         painter.drawRoundedRect(self.rect(), ItemStyles.NODE_CORNER_RADIUS, ItemStyles.NODE_CORNER_RADIUS)
+
+    def __update_rect(self):
+        plug_count = max(len(self.__source_plugs), len(self.__dest_plugs))
+        new_height = plug_count * ItemStyles.PLUG_RECT.height() * 1.5
+        new_height = max(new_height, ItemStyles.NODE_INITIAL_RECT.height())
+
+        rect = self.rect()
+        rect.setHeight(new_height)
+        self.setRect(rect)
 
     def __align_source_plugs(self):
         pos = self.pos()
