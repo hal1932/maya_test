@@ -67,6 +67,13 @@ class NodeItem(QGraphicsRectItem):
 
     def paint(self, painter, item, widget):
         # type: (QPainter, QStyleOptionGraphicsItem, QWidget) -> NoReturn
+        fm = QFontMetrics(painter.font())
+        label_width = fm.width(self.name)
+
+        rect = self.rect()
+        label_pos = QPoint(rect.x() + rect.width() / 2 - label_width / 2, rect.y() - fm.descent())
+        painter.drawText(label_pos, self.name)
+
         if self.isSelected():
             painter.setPen(ItemStyles.NODE_FOREGROUND_ACTIVE)
         painter.drawRoundedRect(self.rect(), ItemStyles.NODE_CORNER_RADIUS, ItemStyles.NODE_CORNER_RADIUS)
