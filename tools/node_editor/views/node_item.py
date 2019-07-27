@@ -20,18 +20,19 @@ class NodeItem(QGraphicsRectItem):
         # type: (QGraphicsScene, str, Node) -> NoReturn
         super(NodeItem, self).__init__(parent=None)
 
-        scene.addItem(self)
-
-        self.setRect(ItemStyles.NODE_INITIAL_RECT)
-        self.setFlags(QGraphicsRectItem.ItemIsSelectable)
-        self.setZValue(ItemStyles.NODE_Z_ORDER)
-
         self.__name = name
         self.__model = None
         self.__source_plugs = []
         self.__dest_plugs = []
+        self.__bounding_rect = QRectF(ItemStyles.NODE_INITIAL_RECT)
+
+        scene.addItem(self)
 
         self.set_model(model)
+
+        self.setRect(ItemStyles.NODE_INITIAL_RECT)
+        self.setFlags(QGraphicsRectItem.ItemIsSelectable)
+        self.setZValue(ItemStyles.NODE_Z_ORDER)
 
     def set_model(self, model):
         # type: (Node) -> NoReturn
@@ -84,6 +85,10 @@ class NodeItem(QGraphicsRectItem):
 
         super(NodeItem, self).mouseMoveEvent(e)
 
+    def boundingRect(self):
+        # type: () -> QRectF
+        return self.__bounding_rect
+
     def paint(self, painter, item, widget):
         # type: (QPainter, QStyleOptionGraphicsItem, QWidget) -> NoReturn
         label = '{} ({})'.format(self.name, self.__model.name)
@@ -97,6 +102,8 @@ class NodeItem(QGraphicsRectItem):
         if self.isSelected():
             painter.setPen(ItemStyles.NODE_FOREGROUND_ACTIVE)
         painter.drawRoundedRect(self.rect(), ItemStyles.NODE_CORNER_RADIUS, ItemStyles.NODE_CORNER_RADIUS)
+
+        self.__bounding_rect.setRect(rect.x(), rect.y() - fm.height(), rect.width(), rect.height() + fm.height())
 
     def __update_rect(self):
         plug_count = max(len(self.__source_plugs), len(self.__dest_plugs))
