@@ -21,6 +21,8 @@ class NodeGraphView(GraphicsView):
 
     def on_mouse_wheel(self, wheel):
         # type: (MouseWheelEventArgs) -> NoReturn
+
+        # Alt + Wheel -> ズーム
         if self.is_alt_key_pressed:
             transform = self.transform()
             if wheel.delta > 0:
@@ -36,12 +38,14 @@ class NodeGraphView(GraphicsView):
         if self.is_alt_key_pressed:
             transform = self.transform()
 
+            # Alt + 右ドラッグ → ズーム
             if move.buttons() == Qt.RightButton:
                 self.setTransformationAnchor(QGraphicsView.AnchorViewCenter)
                 delta_x = move.delta_pos.x()
                 scale = 1.0 + delta_x * 0.001
                 transform.scale(scale, scale)
 
+            # Alt + 中ドラッグ → 移動
             elif move.buttons() == Qt.MiddleButton:
                 self.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
                 delta_x = move.delta_pos.x()
@@ -68,6 +72,8 @@ class NodeGraphScene(QGraphicsScene):
 
     def mouseMoveEvent(self, e):
         # type: (QGraphicsSceneMouseEvent) -> NoReturn
+
+        # mouseOverEvent/mouseLeaveEventのカスタム実装
         all_items = self.items()
         over_items = self.items(e.scenePos())
 
