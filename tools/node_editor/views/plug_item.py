@@ -74,6 +74,11 @@ class PlugItem(QGraphicsEllipseItem):
         if other.source == self:
             return None
 
+        if len(other.__edges) > 0:
+            assert len(other.__edges) == 1
+            edge = list(other.__edges)[0]
+            other.disconnect(edge)
+
         # print 'connect: {} -> {}'.format(self.name, other.name)
 
         new_edge = EdgeItem(self.scene(), self, other)
