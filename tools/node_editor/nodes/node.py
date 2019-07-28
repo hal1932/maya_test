@@ -6,63 +6,7 @@ from six.moves import *
 
 from abc import ABCMeta, abstractmethod
 
-
-class Attribute(object):
-
-    @property
-    def node(self):
-        # type: () -> Node
-        return self.__node
-
-    @property
-    def name(self):
-        # type: () -> str
-        return self.__name
-
-    @property
-    def value(self):
-        # type: () -> object
-        return self.__value
-
-    @value.setter
-    def value(self, value):
-        # type: (object) -> NoReturn
-        self.__value = value
-
-    @property
-    def source(self):
-        # type: () -> Attribute
-        return self.__source
-
-    @property
-    def destination(self):
-        # type: () -> Attribute
-        return self.__destination
-
-    def __init__(self, name, node):
-        # type: (str, Node) -> NoReturn
-        self.__name = name
-        self.__node = node
-        self.__value = None
-        self.__source = None
-        self.__destination = None
-
-    def connect(self, other):
-        # type: (Attribute) -> NoReturn
-        self.__destination = other
-        other.__source = self
-
-    def disconnect(self, other):
-        # type: (Attribute) -> NoReturn
-        self.__destination = None
-        other.__source = None
-
-    def propagate(self):
-        # type: () -> bool
-        if self.__destination is None:
-            return False
-        self.__destination.value = self.value
-        return True
+from tools.node_editor.nodes.attribute import Attribute
 
 
 @add_metaclass(ABCMeta)
@@ -128,13 +72,19 @@ class Node(object):
         self.__outputs[name] = attr
         return attr
 
-    def find_input_attribute(self, name):
-        # type: (str) -> Attribute
-        return self.__inputs.get(name, None)
+    def evaluate(self):
+        # type: () -> NoReturn
+        print('eval: {}'.format(self.name))
+        for input in self.inputs:
+            print('eval: {}'.format(input.name))
+            input.evaluate()
+            print('eval: {} -> {}'.format(input.name, input.value))
 
-    def find_output_attribute(self, name):
-        # type: (str) -> Attribute
-        return self.__outputs.get(name, None)
+        print('compute: {}'.format(self.name))
+        self.compute()
+
+        for output in self.outputs:
+            output.propagate()
 
     def propagate(self):
         # type:() -> bool
@@ -152,9 +102,9 @@ class ConstNode(Node):
         # type: () -> Attribute
         return self.__output
 
-    def __init__(self, data=None):
-        # type: (object) -> NoReturn
-        super(ConstNode, self).__init__('const')
+    def __init__(self, name, data=None):
+        # type: (str, object) -> NoReturn
+        super(ConstNode, self).__init__(name)
         self.__output = None
         self.set_data(data)
 
@@ -169,6 +119,7 @@ class ConstNode(Node):
         pass
 
     def compute(self):
+        print('eval const: {}, {}'.format(self.name, self.data))
         self.__output.value = self.data
 
 
@@ -190,8 +141,9 @@ class AddNode(Node):
         # type: () -> Attribute
         return self.__output
 
-    def __init__(self):
-        super(AddNode, self).__init__('add')
+    def __init__(self, name):
+        # type: (str) -> NoReturn
+        super(AddNode, self).__init__(name)
         self.__input1 = None
         self.__input2 = None
         self.__output = None

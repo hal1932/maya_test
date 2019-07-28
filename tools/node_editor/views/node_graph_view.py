@@ -61,7 +61,7 @@ class NodeGraphScene(QGraphicsScene):
 
     def add_node(self, cls, name):
         # type: (type, str) -> NodeItem
-        model = cls()
+        model = cls(name)
         model.initialize()
         node = NodeItem(self, name, model)
         return node
@@ -113,12 +113,15 @@ if __name__ == '__main__':
 
             def _calc():
                 input1 = float(const1_text.text())
+                print ('set: {}, {}'.format(node1.model.name, input1))
                 node1.model.set_data(input1)
 
                 input2 = float(const2_text.text())
+                print ('set: {}, {}'.format(node2.model.name, input2))
                 node2.model.set_data(input2)
 
-                NodeGraph.evaluate(node3.model)
+                # NodeGraph.evaluate(node3.model)
+                node3.model.evaluate()
                 result_text.setText(str(node3.model.output.value))
 
             calc_button.clicked.connect(_calc)
