@@ -8,6 +8,72 @@ from tools.node_editor.views.graphics_item_signal import GraphicsItemSignal
 from tools.node_editor.nodes.node import Attribute
 
 
+class _FloatingEdge(object):
+
+    def __init__(self):
+        self.__origin = None  # type: PlugItem
+        self.__dest = None  # type: PlugItem
+        self.__edge = None  # type: EdgeItem
+
+    def open(self, origin):
+        # type: (QGraphicsScene, PlugItem) -> NoReturn
+        self.__dest = PlugItem(origin.scene(), None, not origin.is_input)
+        self.__dest.setVisible(False)
+
+        if origin.is_input:
+            self.__edge = EdgeItem(origin.scene(), None, origin)
+        else:
+            self.__edge = EdgeItem(origin.scene(), origin, None)
+
+        self.__origin = origin
+
+    def set_dest_pos(self, pos):
+        # type: (QPoint) -> NoReturn
+        edge = self.__edge
+        origin = self.__origin
+
+        if edge.source == origin:
+            edge.set_end(pos)
+        elif edge.destination == origin:
+            edge.set_start(pos)
+
+    def set_dest_plug(self, plug):
+        # type: (PlugItem) -> NoReturn
+        edge = self.__edge
+
+        if edge is not None and plug not in edge:
+            if edge.source is None:
+                edge.set_source(plug)
+            elif edge.destination is None:
+                edge.set_destination(plug)
+
+    def clear_clear_plug(self):
+        # type: () -> NoReturn
+        edge = self.__edge
+        origin = self.__origin
+
+        if edge is not None and origin not in edge:
+            if edge.source == origin:
+                edge.set_source(None)
+            elif edge.destination == origin:
+                edge.set_destination(None)
+
+    def close(self):
+        # type: () -> EdgeItem
+        edge = self.__edge
+        if edge is None:
+            return None
+
+        source = edge.source
+        destination = edge.destination
+        if source is not None and destination is not None:
+            new_edge = source.connect(destination)
+
+        self.__origin.scene().removeItem(edge)
+
+        return new_edge
+
+
 class PlugItem(QGraphicsEllipseItem):
 
     @property
@@ -35,7 +101,7 @@ class PlugItem(QGraphicsEllipseItem):
         # type: () -> Attribute
         return self.__model
 
-    # __edge_candidate = None
+    __floating_edge = _FloatingEdge()
 
     def __init__(self, scene, name, is_input, model=None):
         # type: (QGraphicsScene, QPoint, QGraphicsItem, Attribute) -> NoReturn
@@ -127,21 +193,21 @@ class PlugItem(QGraphicsEllipseItem):
         self.setBrush(ItemStyles.PLUG_BACKGROUND_TARGET)
 
         # エッジ作成中だったら、そのエッジの端点に自分を割り当てる
-        EdgeFactory.set_other_plug(self)
+        PlugItem.__floating_edge.set_dest_plug(self)
 
     def mouseLeaveEvent(self, e):
         # type: (QGraphicsSceneMouseEvent) -> NoReturn
         self.__update_styles()
 
         # 作成中のエッジの端点に自分が割り当てられてたら、割り当てを解除する
-        EdgeFactory.clear_other_plug()
+        PlugItem.__floating_edge.clear_clear_plug()
 
     def mousePressEvent(self, e):
         # type: (QGraphicsSceneMouseEvent) -> NoReturn
 
         # エッジの作成を開始する
-        EdgeFactory.setup(self)
-        EdgeFactory.set_other_pos(e.scenePos())
+        PlugItem.__floating_edge.open(self)
+        PlugItem.__floating_edge.set_dest_pos(e.scenePos())
 
         super(PlugItem, self).mousePressEvent(e)
 
@@ -149,7 +215,7 @@ class PlugItem(QGraphicsEllipseItem):
         # type: (QGraphicsSceneMouseEvent) -> NoReturn
 
         # 作成中のエッジの端点の位置を更新
-        EdgeFactory.set_other_pos(e.scenePos())
+        PlugItem.__floating_edge.set_dest_pos(e.scenePos())
 
         self.setBrush(ItemStyles.PLUG_BACKGROUND_ACTIVE)
         super(PlugItem, self).mouseMoveEvent(e)
@@ -158,7 +224,7 @@ class PlugItem(QGraphicsEllipseItem):
         # type: (QGraphicsSceneMouseEvent) -> NoReturn
 
         # 作成中のエッジの端点にノードが割り当てられてたら、正式にコネクションを張る
-        if not EdgeFactory.commit():
+        if not PlugItem.__floating_edge.close():
             self.__reset_connection()
 
         self.__update_styles()
@@ -187,72 +253,6 @@ class PlugItem(QGraphicsEllipseItem):
             self.setBrush(ItemStyles.PLUG_BACKGROUND_NORMAL)
         else:
             self.setBrush(ItemStyles.PLUG_BACKGROUND_CONNECTED)
-
-
-class EdgeFactory(object):
-
-    origin_plug = None
-    other_plug = None
-    edge = None
-
-    @staticmethod
-    def setup(origin):
-        # type: (QGraphicsScene, PlugItem) -> NoReturn
-        EdgeFactory.other_plug = PlugItem(origin.scene(), None, not origin.is_input)
-        EdgeFactory.other_plug.setVisible(False)
-
-        if origin.is_input:
-            EdgeFactory.edge = EdgeItem(origin.scene(), None, origin)
-        else:
-            EdgeFactory.edge = EdgeItem(origin.scene(), origin, None)
-
-        EdgeFactory.origin_plug = origin
-
-    @staticmethod
-    def set_other_pos(pos):
-        # type: (QPoint) -> NoReturn
-        if EdgeFactory.edge.source == EdgeFactory.origin_plug:
-            EdgeFactory.edge.set_end(pos)
-        elif EdgeFactory.edge.destination == EdgeFactory.origin_plug:
-            EdgeFactory.edge.set_start(pos)
-
-    @staticmethod
-    def set_other_plug(plug):
-        # type: (PlugItem) -> NoReturn
-        edge = EdgeFactory.edge
-
-        if edge is not None and plug not in edge:
-            if edge.source is None:
-                edge.set_source(plug)
-            elif edge.destination is None:
-                edge.set_destination(plug)
-
-    @staticmethod
-    def clear_other_plug():
-        # type: () -> NoReturn
-        edge = EdgeFactory.edge
-        origin = EdgeFactory.origin_plug
-
-        if edge is not None and origin not in edge:
-            if edge.source == origin:
-                edge.set_source(None)
-            elif edge.destination == origin:
-                edge.set_destination(None)
-
-    @staticmethod
-    def commit():
-        # type: () -> bool
-        edge = EdgeFactory.edge
-        if edge is None:
-            return False
-
-        source = edge.source
-        destination = edge.destination
-        if source is not None and destination is not None:
-            source.connect(destination)
-
-        EdgeFactory.origin_plug.scene().removeItem(edge)
-        return True
 
 
 class EdgeItem(QGraphicsLineItem):
