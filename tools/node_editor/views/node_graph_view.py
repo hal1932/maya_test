@@ -9,7 +9,6 @@ from gui.widgets import *
 from tools.node_editor.views.node_item import NodeItem
 from tools.node_editor.views.graphics_view import GraphicsView
 from tools.node_editor.nodes.node import ConstNode, AddNode
-from tools.node_editor.nodes.node_graph import NodeGraph
 
 
 class NodeGraphView(GraphicsView):
