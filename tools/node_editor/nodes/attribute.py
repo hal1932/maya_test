@@ -48,11 +48,9 @@ class Attribute(object):
         # type: (Attribute) -> NoReturn
         self.__destination = other
         other.__source = self
-        print('{}.{} -> {}.{}'.format(self.node.name, self.name, other.node.name, other.name))
 
     def disconnect(self, other):
         # type: (Attribute) -> NoReturn
-        print('{}.{} // {}.{}'.format(self.node.name, self.name, other.node.name, other.name))
         self.__destination = None
         other.__source = None
 

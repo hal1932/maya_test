@@ -74,13 +74,9 @@ class Node(object):
 
     def evaluate(self):
         # type: () -> NoReturn
-        print('eval: {}'.format(self.name))
         for input in self.inputs:
-            print('eval: {}'.format(input.name))
             input.evaluate()
-            print('eval: {} -> {}'.format(input.name, input.value))
 
-        print('compute: {}'.format(self.name))
         self.compute()
 
         for output in self.outputs:
@@ -119,7 +115,6 @@ class ConstNode(Node):
         pass
 
     def compute(self):
-        print('eval const: {}, {}'.format(self.name, self.data))
         self.__output.value = self.data
 
 
