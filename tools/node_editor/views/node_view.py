@@ -4,11 +4,11 @@ from typing import *
 
 from gui.pyside_modules import *
 from tools.node_editor.views.item_styles import ItemStyles
-from tools.node_editor.views.plug_item import PlugItem
+from tools.node_editor.views.plug_view import PlugView
 from tools.node_editor.nodes.node import Node
 
 
-class NodeItem(QGraphicsRectItem):
+class NodeView(QGraphicsRectItem):
 
     @property
     def name(self): return self.__name
@@ -18,7 +18,7 @@ class NodeItem(QGraphicsRectItem):
 
     def __init__(self, scene, name, model=None):
         # type: (QGraphicsScene, str, Node) -> NoReturn
-        super(NodeItem, self).__init__(parent=None)
+        super(NodeView, self).__init__(parent=None)
 
         self.__name = name
         self.__model = None
@@ -61,20 +61,28 @@ class NodeItem(QGraphicsRectItem):
         self.__align_dest_plugs()
 
     def add_input(self, name):
-        # type: (str) -> PlugItem
-        plug = PlugItem(self.scene(), name, True)
+        # type: (str) -> PlugView
+        plug = PlugView(self.scene(), name, True)
         self.__source_plugs.append(plug)
         self.__update_rect()
         self.__align_source_plugs()
         return plug
 
     def add_output(self, name):
-        # type: (str) -> PlugItem
-        plug = PlugItem(self.scene(), name, False)
+        # type: (str) -> PlugView
+        plug = PlugView(self.scene(), name, False)
         self.__dest_plugs.append(plug)
         self.__update_rect()
         self.__align_dest_plugs()
         return plug
+
+    def contextMenuEvent(self, e):
+        # type: (QGraphicsSceneContextMenuEvent) -> NoReturn
+        menu = QMenu()
+        menu.addAction(self.name)
+        action = menu.exec_(e.screenPos())
+        if action is not None:
+            print(action.text())
 
     def mouseMoveEvent(self, e):
         # type: (QGraphicsSceneMouseEvent) -> NoReturn
@@ -83,7 +91,7 @@ class NodeItem(QGraphicsRectItem):
         pos = self.pos() + self.rect().center() + delta
         self.set_position(QPoint(pos.x(), pos.y()))
 
-        super(NodeItem, self).mouseMoveEvent(e)
+        super(NodeView, self).mouseMoveEvent(e)
 
     def boundingRect(self):
         # type: () -> QRectF

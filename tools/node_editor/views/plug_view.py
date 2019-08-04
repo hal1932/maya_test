@@ -11,19 +11,19 @@ from tools.node_editor.nodes.node import Attribute
 class _FloatingEdge(object):
 
     def __init__(self):
-        self.__origin = None  # type: PlugItem
-        self.__dest = None  # type: PlugItem
-        self.__edge = None  # type: EdgeItem
+        self.__origin = None  # type: PlugView
+        self.__dest = None  # type: PlugView
+        self.__edge = None  # type: EdgeView
 
     def open(self, origin):
-        # type: (QGraphicsScene, PlugItem) -> NoReturn
-        self.__dest = PlugItem(origin.scene(), None, not origin.is_input)
+        # type: (QGraphicsScene, PlugView) -> NoReturn
+        self.__dest = PlugView(origin.scene(), None, not origin.is_input)
         self.__dest.setVisible(False)
 
         if origin.is_input:
-            self.__edge = EdgeItem(origin.scene(), None, origin)
+            self.__edge = EdgeView(origin.scene(), None, origin)
         else:
-            self.__edge = EdgeItem(origin.scene(), origin, None)
+            self.__edge = EdgeView(origin.scene(), origin, None)
 
         self.__origin = origin
 
@@ -38,7 +38,7 @@ class _FloatingEdge(object):
             edge.set_start(pos)
 
     def set_dest_plug(self, plug):
-        # type: (PlugItem) -> NoReturn
+        # type: (PlugView) -> NoReturn
         edge = self.__edge
 
         if edge is not None and plug not in edge:
@@ -59,7 +59,7 @@ class _FloatingEdge(object):
                 edge.set_destination(None)
 
     def close(self):
-        # type: () -> EdgeItem
+        # type: () -> EdgeView
         edge = self.__edge
         if edge is None:
             return None
@@ -74,7 +74,7 @@ class _FloatingEdge(object):
         return new_edge
 
 
-class PlugItem(QGraphicsEllipseItem):
+class PlugView(QGraphicsEllipseItem):
 
     @property
     def name(self):
@@ -88,12 +88,12 @@ class PlugItem(QGraphicsEllipseItem):
 
     @property
     def source(self):
-        # type: () -> PlugItem
+        # type: () -> PlugView
         return self.__source
 
     @property
     def destinations(self):
-        # type: () -> Iterable[PlugItem]
+        # type: () -> Iterable[PlugView]
         return self.__destinations
 
     @property
@@ -105,7 +105,7 @@ class PlugItem(QGraphicsEllipseItem):
 
     def __init__(self, scene, name, is_input, model=None):
         # type: (QGraphicsScene, QPoint, QGraphicsItem, Attribute) -> NoReturn
-        super(PlugItem, self).__init__(parent=None)
+        super(PlugView, self).__init__(parent=None)
 
         scene.addItem(self)
         self.setRect(ItemStyles.PLUG_RECT)
@@ -136,7 +136,7 @@ class PlugItem(QGraphicsEllipseItem):
         self.moved.emit(position)
 
     def connect(self, other):
-        # type: (PlugItem) -> EdgeItem
+        # type: (PlugView) -> EdgeView
         if other.source == self:
             return None
 
@@ -147,7 +147,7 @@ class PlugItem(QGraphicsEllipseItem):
 
         # print 'connect: {} -> {}'.format(self.name, other.name)
 
-        new_edge = EdgeItem(self.scene(), self, other)
+        new_edge = EdgeView(self.scene(), self, other)
 
         new_edge.delete_requested.connect(self.disconnect)
 
@@ -165,7 +165,7 @@ class PlugItem(QGraphicsEllipseItem):
         return self.__edges
 
     def disconnect(self, edge):
-        # type: (EdgeItem) -> NoReturn
+        # type: (EdgeView) -> NoReturn
         if edge not in self.__edges:
             return
 
@@ -193,42 +193,42 @@ class PlugItem(QGraphicsEllipseItem):
         self.setBrush(ItemStyles.PLUG_BACKGROUND_TARGET)
 
         # エッジ作成中だったら、そのエッジの端点に自分を割り当てる
-        PlugItem.__floating_edge.set_dest_plug(self)
+        PlugView.__floating_edge.set_dest_plug(self)
 
     def mouseLeaveEvent(self, e):
         # type: (QGraphicsSceneMouseEvent) -> NoReturn
         self.__update_styles()
 
         # 作成中のエッジの端点に自分が割り当てられてたら、割り当てを解除する
-        PlugItem.__floating_edge.clear_clear_plug()
+        PlugView.__floating_edge.clear_clear_plug()
 
     def mousePressEvent(self, e):
         # type: (QGraphicsSceneMouseEvent) -> NoReturn
 
         # エッジの作成を開始する
-        PlugItem.__floating_edge.open(self)
-        PlugItem.__floating_edge.set_dest_pos(e.scenePos())
+        PlugView.__floating_edge.open(self)
+        PlugView.__floating_edge.set_dest_pos(e.scenePos())
 
-        super(PlugItem, self).mousePressEvent(e)
+        super(PlugView, self).mousePressEvent(e)
 
     def mouseMoveEvent(self, e):
         # type: (QGraphicsSceneMouseEvent) -> NoReturn
 
         # 作成中のエッジの端点の位置を更新
-        PlugItem.__floating_edge.set_dest_pos(e.scenePos())
+        PlugView.__floating_edge.set_dest_pos(e.scenePos())
 
         self.setBrush(ItemStyles.PLUG_BACKGROUND_ACTIVE)
-        super(PlugItem, self).mouseMoveEvent(e)
+        super(PlugView, self).mouseMoveEvent(e)
 
     def mouseReleaseEvent(self, e):
         # type: (QGraphicsSceneMouseEvent) -> NoReturn
 
         # 作成中のエッジの端点にノードが割り当てられてたら、正式にコネクションを張る
-        if not PlugItem.__floating_edge.close():
+        if not PlugView.__floating_edge.close():
             self.__reset_connection()
 
         self.__update_styles()
-        super(PlugItem, self).mouseReleaseEvent(e)
+        super(PlugView, self).mouseReleaseEvent(e)
 
     def paint(self, painter, option, widget):
         # type: (QPainter, QStyleOptionGraphicsItem, QWidget) -> NoReturn
@@ -243,7 +243,7 @@ class PlugItem(QGraphicsEllipseItem):
             label_pos = QPoint(-label_width - rect.width() * 0.75, label_height / 2)
 
         painter.drawText(label_pos, self.name)
-        super(PlugItem, self).paint(painter, option, widget)
+        super(PlugView, self).paint(painter, option, widget)
 
     def __reset_connection(self):
         self.translate(self.pos())
@@ -255,21 +255,21 @@ class PlugItem(QGraphicsEllipseItem):
             self.setBrush(ItemStyles.PLUG_BACKGROUND_CONNECTED)
 
 
-class EdgeItem(QGraphicsLineItem):
+class EdgeView(QGraphicsLineItem):
 
     @property
     def source(self):
-        # type: () -> PlugItem
+        # type: () -> PlugView
         return self.__source
 
     @property
     def destination(self):
-        # type: () -> PlugItem
+        # type: () -> PlugView
         return self.__destination
 
     def __init__(self, scene, source=None, destination=None):
-        # type: (QGraphicsScene, PlugItem, PlugItem) -> NoReturn
-        super(EdgeItem, self).__init__(parent=None)
+        # type: (QGraphicsScene, PlugView, PlugView) -> NoReturn
+        super(EdgeView, self).__init__(parent=None)
 
         scene.addItem(self)
         self.setFlags(QGraphicsRectItem.ItemIsSelectable | QGraphicsLineItem.ItemIsFocusable)
@@ -281,7 +281,7 @@ class EdgeItem(QGraphicsLineItem):
         self.__selection_bounds = QGraphicsLineItem(parent=None)
         self.__selection_bounds.setPen(ItemStyles.CONNECTION_FOREGROUND_NORMAL_SHAPE)
 
-        self.delete_requested = GraphicsItemSignal(EdgeItem)
+        self.delete_requested = GraphicsItemSignal(EdgeView)
 
         if source is not None:
             self.set_start(source.pos())
@@ -292,12 +292,12 @@ class EdgeItem(QGraphicsLineItem):
             destination.moved.connect(self.set_end)
 
     def __contains__(self, item):
-        # type: (PlugItem) -> bool
+        # type: (PlugView) -> bool
         return self.source == item or self.destination == item
 
     def __eq__(self, other):
-        # type: (EdgeItem) -> NoReturn
-        if not isinstance(other, EdgeItem):
+        # type: (EdgeView) -> NoReturn
+        if not isinstance(other, EdgeView):
             return False
         if other is None:
             return False
@@ -314,11 +314,11 @@ class EdgeItem(QGraphicsLineItem):
             self.destination.moved.disconnect(self.set_end)
 
     def set_source(self, source):
-        # type: (PlugItem) -> NoReturn
+        # type: (PlugView) -> NoReturn
         self.__source = source
 
     def set_destination(self, destination):
-        # type: (PlugItem) -> NoReturn
+        # type: (PlugView) -> NoReturn
         self.__destination = destination
 
     def set_start(self, point):

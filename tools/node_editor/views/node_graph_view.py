@@ -6,7 +6,7 @@ from gui.pyside_modules import *
 from gui.layouts import *
 from gui.widgets import *
 
-from tools.node_editor.views.node_item import NodeItem
+from tools.node_editor.views.node_view import NodeView
 from tools.node_editor.views.graphics_view import GraphicsView
 from tools.node_editor.nodes.node import ConstNode, AddNode
 
@@ -66,7 +66,7 @@ class NodeGraphScene(QGraphicsScene):
         # type: (type, str) -> NodeItem
         model = cls(name)
         model.initialize()
-        node = NodeItem(self, name, model)
+        node = NodeView(self, name, model)
         return node
 
     def mouseMoveEvent(self, e):
