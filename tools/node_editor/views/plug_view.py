@@ -32,6 +32,7 @@ class _FloatingEdge(object):
         edge = self.__edge
         origin = self.__origin
 
+        # 開始点の反対側に設定する
         if edge.source == origin:
             edge.set_end(pos)
         elif edge.destination == origin:
@@ -42,11 +43,13 @@ class _FloatingEdge(object):
         edge = self.__edge
         origin = self.__origin
 
+        # plug が edge の両端とは違う頂点だったら
         if edge is not None and plug not in edge:
             if plug is not None:
                 if plug.is_input == self.__origin.is_input:
                     plug = None
 
+            # 開始点の反対側に設定する
             if edge.source == origin:
                 edge.set_destination(plug)
             elif edge.destination == origin:
@@ -60,9 +63,11 @@ class _FloatingEdge(object):
 
         new_edge = None
 
+        # 開始点と終了点の両方に plug が設定されてたら
         source = edge.source
         destination = edge.destination
         if source is not None and destination is not None:
+            # plug 同士を接続する
             new_edge = source.connect(destination)
 
         self.__origin.scene().removeItem(edge)
@@ -192,21 +197,16 @@ class PlugView(QGraphicsEllipseItem):
 
     def mouseOverEvent(self, e):
         # type: (QGraphicsSceneMouseEvent) -> NoReturn
-
-        # マウスオーバーされたらハイライト表示
         self.setBrush(ItemStyles.PLUG_BACKGROUND_TARGET)
 
-        # エッジ作成中だったら、そのエッジの端点に自分を割り当てる
+        # 作成中エッジの終了点に自分を設定する
         PlugView.__floating_edge.set_dest_plug(self)
 
     def mouseLeaveEvent(self, e):
         # type: (QGraphicsSceneMouseEvent) -> NoReturn
         self.__update_styles()
 
-        if self.name == 'input1':
-            print()
-
-        # 作成中のエッジの端点に自分が割り当てられてたら、割り当てを解除する
+        # 作成中エッジの終了点をクリアする
         PlugView.__floating_edge.set_dest_plug(None)
 
     def mousePressEvent(self, e):
@@ -221,7 +221,7 @@ class PlugView(QGraphicsEllipseItem):
     def mouseMoveEvent(self, e):
         # type: (QGraphicsSceneMouseEvent) -> NoReturn
 
-        # 作成中のエッジの端点の位置を更新
+        # 作成中エッジの端点の位置を更新
         PlugView.__floating_edge.set_dest_pos(e.scenePos())
 
         self.setBrush(ItemStyles.PLUG_BACKGROUND_ACTIVE)
@@ -230,7 +230,7 @@ class PlugView(QGraphicsEllipseItem):
     def mouseReleaseEvent(self, e):
         # type: (QGraphicsSceneMouseEvent) -> NoReturn
 
-        # 作成中のエッジの端点にノードが割り当てられてたら、正式にコネクションを張る
+        # 作成中エッジの端点にノードが割り当てられてたら、正式にコネクションを張る
         if not PlugView.__floating_edge.close():
             self.__reset_connection()
 
