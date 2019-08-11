@@ -40,29 +40,25 @@ class _FloatingEdge(object):
     def set_dest_plug(self, plug):
         # type: (PlugView) -> NoReturn
         edge = self.__edge
-
-        if edge is not None and plug not in edge:
-            if edge.source is None:
-                edge.set_source(plug)
-            elif edge.destination is None:
-                edge.set_destination(plug)
-
-    def clear_clear_plug(self):
-        # type: () -> NoReturn
-        edge = self.__edge
         origin = self.__origin
 
-        if edge is not None and origin not in edge:
+        if edge is not None and plug not in edge:
+            if plug is not None:
+                if plug.is_input == self.__origin.is_input:
+                    plug = None
+
             if edge.source == origin:
-                edge.set_source(None)
+                edge.set_destination(plug)
             elif edge.destination == origin:
-                edge.set_destination(None)
+                edge.set_source(plug)
 
     def close(self):
         # type: () -> EdgeView
         edge = self.__edge
         if edge is None:
             return None
+
+        new_edge = None
 
         source = edge.source
         destination = edge.destination
@@ -207,8 +203,11 @@ class PlugView(QGraphicsEllipseItem):
         # type: (QGraphicsSceneMouseEvent) -> NoReturn
         self.__update_styles()
 
+        if self.name == 'input1':
+            print()
+
         # 作成中のエッジの端点に自分が割り当てられてたら、割り当てを解除する
-        PlugView.__floating_edge.clear_clear_plug()
+        PlugView.__floating_edge.set_dest_plug(None)
 
     def mousePressEvent(self, e):
         # type: (QGraphicsSceneMouseEvent) -> NoReturn
