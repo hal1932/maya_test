@@ -69,7 +69,7 @@ class Attribute(object):
 
         self.__is_dirty = False
 
-    def propagate(self):
+    def send_value(self):
         # type: () -> NoReturn
         if self.destination is not None:
             self.destination.value = self.value

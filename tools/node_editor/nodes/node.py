@@ -85,7 +85,7 @@ class Node(object):
         self.compute()
 
         for output in self.outputs:
-            output.propagate()
+            output.send_value()
 
     def _set_attribute_affect(self, source, dest):
         # type: (Attribute, Attribute) -> NoReturn
