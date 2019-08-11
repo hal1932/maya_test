@@ -139,11 +139,9 @@ if __name__ == '__main__':
 
             def _calc():
                 input1 = float(const1_text.text())
-                print ('set: {}, {}'.format(node1.model.name, input1))
                 node1.model.set_data(input1)
 
                 input2 = float(const2_text.text())
-                print ('set: {}, {}'.format(node2.model.name, input2))
                 node2.model.set_data(input2)
 
                 # NodeGraph.evaluate(node3.model)

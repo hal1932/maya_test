@@ -27,7 +27,12 @@ class Node(object):
     def data(self, value):
         # type: (object) -> NoReturn
         """DataBlock"""
+        if value == self.__data:
+            return
+
         self.__data = value
+        for output in self.outputs:
+            output.set_dirty()
 
     @property
     def inputs(self):
@@ -82,12 +87,9 @@ class Node(object):
         for output in self.outputs:
             output.propagate()
 
-    def propagate(self):
-        # type:() -> bool
-        has_next = False
-        for output in self.__outputs.values():
-            has_next = has_next or output.propagate()
-        return has_next
+    def _set_attribute_affect(self, source, dest):
+        # type: (Attribute, Attribute) -> NoReturn
+        source._set_affect(dest)
 
 
 class ConstNode(Node):
@@ -147,35 +149,14 @@ class AddNode(Node):
         self.__input1 = self.add_input_attribute('input1')
         self.__input2 = self.add_input_attribute('input2')
         self.__output = self.add_output_attribute('output')
+        self._set_attribute_affect(self.__input1, self.__output)
+        self._set_attribute_affect(self.__input2, self.__output)
 
     def uninitialize(self):
         pass
 
     def compute(self):
+        if self.__input1.value is None or self.__input2.value is None:
+            return
         self.__output.value = self.__input1.value + self.__input2.value
-
-
-if __name__ == '__main__':
-    const1 = ConstNode(1)
-    const1.initialize()
-
-    const2 = ConstNode(2)
-    const2.initialize()
-
-    add1 = AddNode()
-    add1.initialize()
-
-    const1.output.connect(add1.input1)
-    const2.output.connect(add1.input2)
-
-    const1.compute()
-    const1.propagate()
-
-    const2.compute()
-    const2.propagate()
-
-    add1.compute()
-
-    # print '{} + {} = {}'.format(const1.data, const2.data, add1.output.value)
-
 
