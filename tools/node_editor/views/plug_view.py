@@ -186,6 +186,14 @@ class PlugView(QGraphicsEllipseItem):
             destination.__source = None
             destination.__update_styles()
 
+    def contextMenuEvent(self, e):
+        # type: (QGraphicsSceneContextMenuEvent) -> NoReturn
+        menu = QMenu()
+        menu.addAction(self.name)
+        action = menu.exec_(e.screenPos())
+        if action is not None:
+            print(action.text())
+
     def mouseOverEvent(self, e):
         # type: (QGraphicsSceneMouseEvent) -> NoReturn
 

@@ -11,12 +11,28 @@ from tools.node_editor.views.graphics_view import GraphicsView
 from tools.node_editor.nodes.node import ConstNode, AddNode
 
 
-class NodeGraphView(GraphicsView):
+class NodeGraphWidget(GraphicsView):
 
     def __init__(self, parent=None):
-        super(NodeGraphView, self).__init__(parent)
+        super(NodeGraphWidget, self).__init__(parent)
+        self.__scene = _NodeGraphScene()
+
+        self.setScene(self.__scene)
+
         self.mouse_move.connect(self.on_mouse_move)
         self.mouse_wheel.connect(self.on_mouse_wheel)
+
+    def setBackgroundBrush(self, brush):
+        # type: (QBrush) -> NoReturn
+        self.__scene.setBackgroundBrush(brush)
+
+    def set_rect(self, rect):
+        # type: (QRect) -> NoReturn
+        self.__scene.setSceneRect(QRectF(rect))
+
+    def add_node(self, cls, name):
+        # type: (type, str) -> NodeView
+        return self.__scene.add_node(cls, name)
 
     def on_mouse_wheel(self, wheel):
         # type: (MouseWheelEventArgs) -> NoReturn
@@ -56,10 +72,10 @@ class NodeGraphView(GraphicsView):
             move.handled = True
 
 
-class NodeGraphScene(QGraphicsScene):
+class _NodeGraphScene(QGraphicsScene):
 
     def __init__(self, *args, **kwargs):
-        super(NodeGraphScene, self).__init__(*args, **kwargs)
+        super(_NodeGraphScene, self).__init__(*args, **kwargs)
         self.__mouse_overed_items = set()
 
     def add_node(self, cls, name):
@@ -68,6 +84,14 @@ class NodeGraphScene(QGraphicsScene):
         model.initialize()
         node = NodeView(self, name, model)
         return node
+
+    def contextMenuEvent(self, e):
+        # type: (QGraphicsSceneContextMenuEvent) -> NoReturn
+        item = self.itemAt(e.scenePos(), QTransform())
+        if item is None:
+            pass
+        else:
+            super(_NodeGraphScene, self).contextMenuEvent(e)
 
     def mouseMoveEvent(self, e):
         # type: (QGraphicsSceneMouseEvent) -> NoReturn
@@ -87,7 +111,7 @@ class NodeGraphScene(QGraphicsScene):
                     item.mouseLeaveEvent(e)
                 self.__mouse_overed_items.remove(item)
 
-        super(NodeGraphScene, self).mouseMoveEvent(e)
+        super(_NodeGraphScene, self).mouseMoveEvent(e)
 
 
 if __name__ == '__main__':
@@ -95,21 +119,18 @@ if __name__ == '__main__':
         def __init__(self):
             super(MainWindow, self).__init__()
 
-            scene = NodeGraphScene(0, 0, 640, 480)
-            scene.addRect(0, 0, scene.width(), scene.height(), QPen(Qt.transparent), QBrush(Qt.white))
+            view = NodeGraphWidget()
+            view.setBackgroundBrush(QBrush(Qt.white))
+            view.set_rect(QRect(0, 0, 640, 480))
 
-            node1 = scene.add_node(ConstNode, 'node1')
+            node1 = view.add_node(ConstNode, 'node1')
             node1.set_position(QPoint(100, 100))
 
-            node2 = scene.add_node(ConstNode, 'node2')
+            node2 = view.add_node(ConstNode, 'node2')
             node2.set_position(QPoint(100, 200))
 
-            node3 = scene.add_node(AddNode, 'node3')
+            node3 = view.add_node(AddNode, 'node3')
             node3.set_position(QPoint(300, 150))
-
-            view = NodeGraphView()
-            view.setBackgroundBrush(QBrush(Qt.gray))
-            view.setScene(scene)
 
             const1_text = QLineEdit()
             const2_text = QLineEdit()
