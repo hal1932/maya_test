@@ -9,8 +9,24 @@ from abc import ABCMeta, abstractmethod
 from tools.node_editor.nodes.attribute import Attribute
 
 
+import abc
+if not hasattr(abc, 'abstractstaticmethod '):
+    # https://stackoverflow.com/questions/4474395/staticmethod-and-abc-abstractmethod-will-it-blend
+    class abstractstaticmethod(staticmethod):
+        __slots__ = ()
+        def __init__(self, function):
+            super(abstractstaticmethod, self).__init__(function)
+            function.__isabstractmethod__ = True
+        __isabstractmethod__ = True
+
+
 @add_metaclass(ABCMeta)
 class Node(object):
+
+    @abstractstaticmethod
+    def category():
+        # type: () -> str
+        pass
 
     @property
     def name(self):
@@ -92,8 +108,91 @@ class Node(object):
         source._set_affect(dest)
 
 
+class UnaryOpeNode(Node):
+    """Arithmetic Unary Operation Node"""
+
+    @property
+    def input(self):
+        # type: () -> Attribute
+        return self.__input
+
+    @property
+    def output(self):
+        # type: () -> Attribute
+        return self.__output
+
+    def __init__(self, name):
+        # type: (str) -> NoReturn
+        super(AddNode, self).__init__(name)
+        self.__input = None
+        self.__output = None
+
+    def initialize(self):
+        self.__input = self.add_input_attribute('input')
+        self.__output = self.add_output_attribute('output')
+        self._set_attribute_affect(self.__input, self.__output)
+
+    def uninitialize(self):
+        pass
+
+    @abstractmethod
+    def compute(self):
+        pass
+
+    def _is_inputs_assigned(self):
+        return self.__input.value is not None
+
+
+class BinaryOpeNode(Node):
+    """Arithmetic Binary Operation Node"""
+
+    @property
+    def input1(self):
+        # type: () -> Attribute
+        return self.__input1
+
+    @property
+    def input2(self):
+        # type: () -> Attribute
+        return self.__input2
+
+    @property
+    def output(self):
+        # type: () -> Attribute
+        return self.__output
+
+    def __init__(self, name):
+        # type: (str) -> NoReturn
+        super(BinaryOpeNode, self).__init__(name)
+        self.__input1 = None
+        self.__input2 = None
+        self.__output = None
+
+    def initialize(self):
+        self.__input1 = self.add_input_attribute('input1')
+        self.__input2 = self.add_input_attribute('input2')
+        self.__output = self.add_output_attribute('output')
+        self._set_attribute_affect(self.__input1, self.__output)
+        self._set_attribute_affect(self.__input2, self.__output)
+
+    def uninitialize(self):
+        pass
+
+    @abstractmethod
+    def compute(self):
+        pass
+
+    def _is_inputs_assigned(self):
+        return self.__input1.value is not None and self.__input2.value is not None
+
+
 class ConstNode(Node):
     """Constant Node"""
+
+    @staticmethod
+    def category():
+        # type: () -> str
+        return None
 
     @property
     def output(self):
@@ -120,43 +219,66 @@ class ConstNode(Node):
         self.__output.value = self.data
 
 
-class AddNode(Node):
-    """Arithmetic Addition Node"""
+class AddNode(BinaryOpeNode):
 
-    @property
-    def input1(self):
-        # type: () -> Attribute
-        return self.__input1
-
-    @property
-    def input2(self):
-        # type: () -> Attribute
-        return self.__input2
-
-    @property
-    def output(self):
-        # type: () -> Attribute
-        return self.__output
+    @staticmethod
+    def category():
+        # type: () -> str
+        return 'binary'
 
     def __init__(self, name):
-        # type: (str) -> NoReturn
         super(AddNode, self).__init__(name)
-        self.__input1 = None
-        self.__input2 = None
-        self.__output = None
-
-    def initialize(self):
-        self.__input1 = self.add_input_attribute('input1')
-        self.__input2 = self.add_input_attribute('input2')
-        self.__output = self.add_output_attribute('output')
-        self._set_attribute_affect(self.__input1, self.__output)
-        self._set_attribute_affect(self.__input2, self.__output)
-
-    def uninitialize(self):
-        pass
 
     def compute(self):
-        if self.__input1.value is None or self.__input2.value is None:
+        if not self._is_inputs_assigned():
             return
-        self.__output.value = self.__input1.value + self.__input2.value
+        self.output.value = self.input1.value + self.input2.value
+
+
+class SubNode(AddNode):
+
+    @staticmethod
+    def category():
+        # type: () -> str
+        return 'binary'
+
+    def __init__(self, name):
+        super(SubNode, self).__init__(name)
+
+    def compute(self):
+        if not self._is_inputs_assigned():
+            return
+        self.output.value = self.input1.value - self.input2.value
+
+
+class MulNode(AddNode):
+
+    @staticmethod
+    def category():
+        # type: () -> str
+        return 'binary'
+
+    def __init__(self, name):
+        super(MulNode, self).__init__(name)
+
+    def compute(self):
+        if not self._is_inputs_assigned():
+            return
+        self.output.value = self.input1.value * self.input2.value
+
+
+class DivNode(AddNode):
+
+    @staticmethod
+    def category():
+        # type: () -> str
+        return 'binary'
+
+    def __init__(self, name):
+        super(DivNode, self).__init__(name)
+
+    def compute(self):
+        if not self._is_inputs_assigned():
+            return
+        self.output.value = self.input1.value / self.input2.value
 

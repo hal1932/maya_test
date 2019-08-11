@@ -111,7 +111,11 @@ class NodeView(QGraphicsRectItem):
             painter.setPen(ItemStyles.NODE_FOREGROUND_ACTIVE)
         painter.drawRoundedRect(self.rect(), ItemStyles.NODE_CORNER_RADIUS, ItemStyles.NODE_CORNER_RADIUS)
 
-        self.__bounding_rect.setRect(rect.x(), rect.y() - fm.height(), rect.width(), rect.height() + fm.height())
+        self.__bounding_rect.setRect(
+            min(rect.x(), (rect.x() + rect.width() / 2) - label_width / 2),
+            rect.y() - fm.height(),
+            max(rect.width(), label_width),
+            rect.height() + fm.height())
 
     def __update_rect(self):
         plug_count = max(len(self.__source_plugs), len(self.__dest_plugs))

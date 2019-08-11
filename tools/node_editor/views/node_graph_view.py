@@ -2,13 +2,15 @@
 from __future__ import absolute_import
 from typing import *
 
+import inspect
+
 from gui.pyside_modules import *
 from gui.layouts import *
 from gui.widgets import *
 
 from tools.node_editor.views.node_view import NodeView
 from tools.node_editor.views.graphics_view import GraphicsView
-from tools.node_editor.nodes.node import ConstNode, AddNode
+import tools.node_editor.nodes.node as node
 
 
 class NodeGraphWidget(GraphicsView):
@@ -82,16 +84,53 @@ class _NodeGraphScene(QGraphicsScene):
         # type: (type, str) -> NodeItem
         model = cls(name)
         model.initialize()
-        node = NodeView(self, name, model)
-        return node
+        new_node = NodeView(self, name, model)
+        self.update()
+        return new_node
 
     def contextMenuEvent(self, e):
         # type: (QGraphicsSceneContextMenuEvent) -> NoReturn
         item = self.itemAt(e.scenePos(), QTransform())
-        if item is None:
-            pass
-        else:
+        if item is not None:
             super(_NodeGraphScene, self).contextMenuEvent(e)
+            return
+
+        node_menus = {}
+        for cls in node.__dict__.values():
+            if not isinstance(cls, type) or not issubclass(cls, node.Node):
+                continue
+            if inspect.isabstract(cls):
+                continue
+            if not hasattr(cls, 'category'):
+                continue
+
+            category = cls.category()
+            if category not in node_menus:
+                node_menus[category] = []
+
+            node_menus[category].append(cls)
+
+        menu = QMenu()
+        for category, items in node_menus.items():
+            if category is None:
+                for cls in items:
+                    act = menu.addAction(cls.__name__)
+                    act.node_cls = cls
+            else:
+                child = QMenu(category)
+                for cls in items:
+                    act = child.addAction(cls.__name__)
+                    act.node_cls = cls
+                menu.addMenu(child)
+
+        action = menu.exec_(e.screenPos())
+        if action is None:
+            return
+
+        node_cls = action.node_cls
+
+        new_node = self.add_node(node_cls, node_cls.__name__)
+        new_node.set_position(e.scenePos())
 
     def mouseMoveEvent(self, e):
         # type: (QGraphicsSceneMouseEvent) -> NoReturn
@@ -123,13 +162,13 @@ if __name__ == '__main__':
             view.setBackgroundBrush(QBrush(Qt.white))
             view.set_rect(QRect(0, 0, 640, 480))
 
-            node1 = view.add_node(ConstNode, 'node1')
+            node1 = view.add_node(node.ConstNode, 'node1')
             node1.set_position(QPoint(100, 100))
 
-            node2 = view.add_node(ConstNode, 'node2')
+            node2 = view.add_node(node.ConstNode, 'node2')
             node2.set_position(QPoint(100, 200))
 
-            node3 = view.add_node(AddNode, 'node3')
+            node3 = view.add_node(node.AddNode, 'node3')
             node3.set_position(QPoint(300, 150))
 
             const1_text = QLineEdit()
