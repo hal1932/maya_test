@@ -33,4 +33,3 @@ if __name__ == '__main__':
     t.test.connect(lambda x: print(x))
     t.test1.connect(lambda x, y: print(x, y))
     t.f()
-

@@ -183,7 +183,6 @@ if __name__ == '__main__':
                 input2 = float(const2_text.text())
                 node2.model.set_data(input2)
 
-                # NodeGraph.evaluate(node3.model)
                 node3.model.evaluate()
                 result_text.setText(str(node3.model.output.value))
 
