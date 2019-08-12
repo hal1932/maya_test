@@ -77,6 +77,8 @@ class _FloatingEdge(object):
 
 class PlugView(QGraphicsEllipseItem):
 
+    moved = GraphicsItemSignal(QPointF)
+
     @property
     def name(self):
         # type: () -> str
@@ -124,8 +126,6 @@ class PlugView(QGraphicsEllipseItem):
         self.__is_connection_candidate = False
 
         self.set_model(model)
-
-        self.moved = GraphicsItemSignal(QPointF)
 
     def set_model(self, model):
         # type: (Attribute) -> NoReturn
@@ -264,6 +264,8 @@ class PlugView(QGraphicsEllipseItem):
 
 class EdgeView(QGraphicsLineItem):
 
+    delete_requested = GraphicsItemSignal(object)
+
     @property
     def source(self):
         # type: () -> PlugView
@@ -287,8 +289,6 @@ class EdgeView(QGraphicsLineItem):
         self.__destination = destination
         self.__selection_bounds = QGraphicsLineItem(parent=None)
         self.__selection_bounds.setPen(ItemStyles.CONNECTION_FOREGROUND_NORMAL_SHAPE)
-
-        self.delete_requested = GraphicsItemSignal(EdgeView)
 
         if source is not None:
             self.set_start(source.pos())
