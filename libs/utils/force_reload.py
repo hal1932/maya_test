@@ -55,8 +55,6 @@ def __force_reload_rec(module_obj, indent=0):
         return
 
     print('{}reload {}, {}'.format('  ' * indent, module_obj.__name__, module_obj.__file__))
-    module_obj = reload_module(module_obj)
-    __reloaded_modules.add(module_obj)
 
     for submodule in __find_submodules(module_obj):
         if not __is_reload_target(submodule.module_obj):
@@ -72,20 +70,24 @@ def __force_reload_rec(module_obj, indent=0):
                 if as_name is None:
                     as_name = name
 
-                # if as_name == name:
-                #     print('{} - ({}) {} {} {} -> {}'.format(
-                #         '  ' * (indent + 1),
-                #         module_obj.__name__,
-                #         name, module_obj.__dict__[as_name],
-                #         id(module_obj.__dict__[as_name]), id(submodule.module_obj.__dict__[name])))
-                # else:
-                #     print('{} - ({}) {} as {} {} {} -> {}'.format(
-                #         '  ' * (indent + 1),
-                #         module_obj.__name__,
-                #         name, as_name, module_obj.__dict__[as_name],
-                #         id(module_obj.__dict__[as_name]), id(submodule.module_obj.__dict__[name])))
+                # if as_name[0] != 'Q':
+                #     if as_name == name:
+                #         print('{} - ({}) {} {} {} -> {}'.format(
+                #             '  ' * (indent + 1),
+                #             module_obj.__name__,
+                #             name, module_obj.__dict__[as_name],
+                #             id(module_obj.__dict__[as_name]), id(submodule.module_obj.__dict__[name])))
+                #     else:
+                #         print('{} - ({}) {} as {} {} {} -> {}'.format(
+                #             '  ' * (indent + 1),
+                #             module_obj.__name__,
+                #             name, as_name, module_obj.__dict__[as_name],
+                #             id(module_obj.__dict__[as_name]), id(submodule.module_obj.__dict__[name])))
 
                 module_obj.__dict__[as_name] = submodule.module_obj.__dict__[name]
+
+    module_obj = reload_module(module_obj)
+    __reloaded_modules.add(module_obj)
 
 
 class __ModuleInfo(object):
