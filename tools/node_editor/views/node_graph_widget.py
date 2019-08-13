@@ -173,7 +173,7 @@ if __name__ == '__main__':
 
             const1_text = QLineEdit()
             const2_text = QLineEdit()
-            calc_button = QPushButton(u'計算')
+            calc_button = QPushButton(self.tr('calc'))
             result_text = QLineEdit()
 
             def _calc():
@@ -191,8 +191,8 @@ if __name__ == '__main__':
             layout = hbox(
                 view,
                 vbox(
-                    hbox(QLabel(u'入力1'), const1_text),
-                    hbox(QLabel(u'入力2'), const2_text),
+                    hbox(QLabel(self.tr('input1')), const1_text),
+                    hbox(QLabel(self.tr('input2')), const2_text),
                     hline(),
                     hbox(calc_button, result_text),
                     stretch()
