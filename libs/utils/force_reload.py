@@ -67,7 +67,7 @@ def __force_reload_rec(module_obj, indent=0):
 
         if submodule.from_import:
             for symbol in submodule.symbols:
-                name = symbol.name
+                name = symbol.class_name
 
                 as_name = symbol.as_name
                 if as_name is None:
@@ -133,7 +133,7 @@ def __find_submodules(module_obj):
 
     for node in tree.body:
         if isinstance(node, ast.Import):
-            target_module = __get_sys_module(module_obj, node.names[0].name)
+            target_module = __get_sys_module(module_obj, node.names[0].class_name)
             if target_module is None:
                 continue
 
@@ -146,7 +146,7 @@ def __find_submodules(module_obj):
             if target_module is None:
                 continue
 
-            if node.names[0].name == '*':
+            if node.names[0].class_name == '*':
                 if '__all__' in target_module.__dict__:
                     symbols = [__SymbolInfo(x) for x in target_module.__dict__['__all__']]
                 else:

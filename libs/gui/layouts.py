@@ -3,7 +3,7 @@ from __future__ import absolute_import
 from typing import *
 from six.moves import *
 
-from gui.pyside_modules import *
+from libs.gui.pyside_modules import *
 
 
 def hbox(*items):
