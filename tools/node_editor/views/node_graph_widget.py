@@ -205,7 +205,17 @@ if __name__ == '__main__':
             self.setCentralWidget(widget)
 
     import sys
+
+    translator_ja_jp = QTranslator()
+    translator_en_us = QTranslator()
+    translator_ja_jp.load('i18n/ja_JP')
+    translator_en_us.load('i18n/en_US')
+
     app = QApplication(sys.argv)
+    app.installTranslator(translator_ja_jp)
+    app.removeTranslator(translator_ja_jp)
+    app.installTranslator(translator_en_us)
+
     window = MainWindow()
     window.show()
     sys.exit(app.exec_())

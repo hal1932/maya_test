@@ -99,7 +99,7 @@ class NodeView(QGraphicsRectItem):
 
     def paint(self, painter, item, widget):
         # type: (QPainter, QStyleOptionGraphicsItem, QWidget) -> NoReturn
-        label = '{} ({})'.format(self.name, self.__model.name)
+        label = '{} ({})'.format(self.name, self.__model.absolute_name)
         fm = QFontMetrics(painter.font())
         label_width = fm.width(label)
 

@@ -24,7 +24,7 @@ class MayaMainWindowBase(QMainWindow, MayaQWidgetBaseMixin):
         return wrapInstance(long(maya_main_window_ptr), QWidget)
 
     @property
-    def class_name(self):
+    def absolute_name(self):
         # type: () -> NoReturn
         return '{}.{}'.format(self.__module__, self.__class__.__name__)
 
@@ -33,11 +33,11 @@ class MayaMainWindowBase(QMainWindow, MayaQWidgetBaseMixin):
 
         for child in maya_window.children():
             # reload でポインタが変わったときのために名前で比較する
-            if child.objectName() == self.class_name:
+            if child.objectName() == self.absolute_name:
                 child.close()
 
         super(MayaMainWindowBase, self).__init__(parent=maya_window)
-        self.setObjectName(self.class_name)
+        self.setObjectName(self.absolute_name)
 
     def setup_ui(self):
         # type: () -> MayaMainWindowBase

@@ -34,6 +34,7 @@ class GraphicsView(QGraphicsView):
         self.__mouse_pos = pos
 
         self.mouse_move.emit(move)
+        self.tr('aaa')
 
         if not move.handled:
             super(GraphicsView, self).mouseMoveEvent(e)
