@@ -38,6 +38,7 @@ class MayaMainWindowBase(QMainWindow, MayaQWidgetBaseMixin):
 
         super(MayaMainWindowBase, self).__init__(parent=maya_window)
         self.setObjectName(self.absolute_name)
+        self.setAttribute(Qt.WA_DeleteOnClose)
 
     def setup_ui(self):
         # type: () -> MayaMainWindowBase
