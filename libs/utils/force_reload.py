@@ -62,6 +62,9 @@ def __force_reload_rec(module_obj, indent=0):
 
         __force_reload_rec(submodule.module_obj, indent + 1)
 
+        module_obj = reload_module(module_obj)
+        __reloaded_modules.add(module_obj)
+
         if submodule.from_import:
             for symbol in submodule.symbols:
                 name = symbol.name
@@ -85,9 +88,6 @@ def __force_reload_rec(module_obj, indent=0):
                 #             id(module_obj.__dict__[as_name]), id(submodule.module_obj.__dict__[name])))
 
                 module_obj.__dict__[as_name] = submodule.module_obj.__dict__[name]
-
-    module_obj = reload_module(module_obj)
-    __reloaded_modules.add(module_obj)
 
 
 class __ModuleInfo(object):
